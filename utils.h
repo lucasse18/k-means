@@ -1,3 +1,6 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
 #include <math.h>
 
 int pertence(int x, int *v, int tam);
