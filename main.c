@@ -107,6 +107,7 @@ int main(int argc, char* argv[]) {
       }
     }
 
+    //FIXME adicionar condicao de parada no while
     //verifica se houve mudança
     if(!troca)
       break;
@@ -137,7 +138,6 @@ int main(int argc, char* argv[]) {
   //salva atribuicoes
   for(int i = 0; i < nLinhas; i++) {
     fprintf(atribuicoesFile, "%d\n", gID[i]);
-    fprintf(stdout, "%d\n", gID[i]);
   }
 
   fclose(centrosFile);
