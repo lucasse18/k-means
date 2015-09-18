@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
   fscanf(stdin,"%d %d", &nLinhas, &nColunas);
   fgetc(stdin);//descarta quebra de linha
 
-  int K = (int)sqrt((double)nLinhas);
+  int K = 3;
 
   int *gID = calloc(nLinhas, sizeof(int));
 
@@ -93,6 +93,7 @@ int main(int argc, char* argv[]) {
     troca = 0;
     for(int i = 0; i < nLinhas; i++) {
       menorDistanca = distancia(exemplos[i], centros[0], nColunas);
+      melhorGrupo = 0;
       for(int j = 1; j < K; j++) {
         dAtual = distancia(exemplos[i], centros[j], nColunas);
         //dAtual = 0 significa que o exemplo coincidiu com o centro
