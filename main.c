@@ -27,11 +27,9 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  int nLinhas, nColunas;
-  fscanf(stdin,"%d %d", &nLinhas, &nColunas);
+  int nLinhas, nColunas, K;
+  fscanf(stdin,"%d %d %d", &nLinhas, &nColunas, &K);
   fgetc(stdin);//descarta quebra de linha
-
-  int K = 3;
 
   int *gID = calloc(nLinhas, sizeof(int));
 
@@ -79,9 +77,9 @@ int main(int argc, char* argv[]) {
     for(int j = 0; j < nColunas; j++) {
       centros[i][j] = exemplos[gerados[i]][j];
       fprintf(centrosIniciaisFile, "%lf", centros[i][j]);
-      fprintf(centrosIniciaisFile, "%s", argv[0]);//FIXME separador sobrando no fim
+      fprintf(centrosIniciaisFile, "%s", argv[0]);
     }
-    fputc('\n', centrosIniciaisFile);
+    fprintf(centrosIniciaisFile, " Exemplo %d\n", gerados[i]);
   }
   fclose(centrosIniciaisFile);
 
@@ -91,13 +89,11 @@ int main(int argc, char* argv[]) {
   int *qtdExemplosGrupo = calloc(K, sizeof(int));
 
   do {
-    //para cada ponto, encontra qual o centro mais próximo
-
-    for(int i = 0; i < K; i++) {
+    for(int i = 0; i < K; i++)
       qtdExemplosGrupo[i] = 0;
-    }
-
     troca = 0;
+
+    //para cada ponto, encontra qual o centro mais próximo
     for(int i = 0; i < nLinhas; i++) {
       menorDistanca = distancia(exemplos[i], centros[0], nColunas);
       melhorGrupo = 0;
@@ -154,6 +150,10 @@ int main(int argc, char* argv[]) {
 
   for(int i = 0; i < K; i++) {
     fprintf(stdout, "%d exeplos no grupo %d\n", qtdExemplosGrupo[i], i);
+  }
+
+  for(int i = 0; i < nLinhas; i++) {
+    fprintf(stdout, "Escolhido: %d, Verdadeiro: %s", gID[i], grupoVerdadeiro[i]);
   }
 
   /* INÍCIO DESALOCAÇÃO DE MEMÓRIA */
