@@ -52,13 +52,13 @@ int main(int argc, char* argv[]) {
   for(int i = 0; i < nLinhas; i++) {
     for(int j = 0; j < nColunas; j++) {
       fscanf(stdin, "%lf", &exemplos[i][j]);
-      fprintf(stdout, "%.1f", exemplos[i][j]);//teste
+      //fprintf(stdout, "%.1f", exemplos[i][j]);//teste
       for(int k = 0; k < tamSeparador; k++)
-        //fgetc(stdin);//descarta separadores
-        fputc(fgetc(stdin), stdout);//teste
+        fgetc(stdin);//descarta separadores
+        //fputc(fgetc(stdin), stdout);//teste
     }
     fgets(grupoVerdadeiro[i], 17, stdin);//contém quebra de linha
-    fprintf(stdout, "%s", grupoVerdadeiro[i]);//teste
+    //fprintf(stdout, "%s", grupoVerdadeiro[i]);//teste
   }
   /* FIM LEITURA DADOS */
 
@@ -84,13 +84,19 @@ int main(int argc, char* argv[]) {
     fputc('\n', centrosIniciaisFile);
   }
   fclose(centrosIniciaisFile);
+
   int melhorGrupo, troca;
   double menorDistanca, dAtual;
   double *acumulador = calloc(K, sizeof(double));
-  int *qtdExemplosGrupo = calloc(nLinhas, sizeof(int));
+  int *qtdExemplosGrupo = calloc(K, sizeof(int));
 
   do {
     //para cada ponto, encontra qual o centro mais próximo
+
+    for(int i = 0; i < K; i++) {
+      qtdExemplosGrupo[i] = 0;
+    }
+
     troca = 0;
     for(int i = 0; i < nLinhas; i++) {
       menorDistanca = distancia(exemplos[i], centros[0], nColunas);
@@ -106,18 +112,13 @@ int main(int argc, char* argv[]) {
         troca++;
         gID[i] = melhorGrupo;
       }
+      qtdExemplosGrupo[melhorGrupo]++;
     }
 
     //FIXME adicionar condicao de parada no while
     //verifica se houve mudança
     if(!troca)
       break;
-
-    for(int i = 0; i < nLinhas; i++) {
-      for(int j = 0; j < K; j++) {
-        //qtdExemplosGrupo...contar qts exemplos em cada grupo
-      }
-    }
 
     //recomputa os centros depois de atribuídos os exemplos
     for(int i = 0; i < nColunas; i++) {
@@ -150,6 +151,10 @@ int main(int argc, char* argv[]) {
 
   fclose(centrosFile);
   fclose(atribuicoesFile);
+
+  for(int i = 0; i < K; i++) {
+    fprintf(stdout, "%d exeplos no grupo %d\n", qtdExemplosGrupo[i], i);
+  }
 
   /* INÍCIO DESALOCAÇÃO DE MEMÓRIA */
   free(qtdExemplosGrupo);
