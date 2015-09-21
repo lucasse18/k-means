@@ -84,9 +84,10 @@ int main(int argc, char* argv[]) {
     fputc('\n', centrosIniciaisFile);
   }
   fclose(centrosIniciaisFile);
-
   int melhorGrupo, troca;
   double menorDistanca, dAtual;
+  double *acumulador = calloc(K, sizeof(double));
+  int *qtdExemplosGrupo = calloc(nLinhas, sizeof(int));
 
   do {
     //para cada ponto, encontra qual o centro mais próximo
@@ -96,8 +97,7 @@ int main(int argc, char* argv[]) {
       melhorGrupo = 0;
       for(int j = 1; j < K; j++) {
         dAtual = distancia(exemplos[i], centros[j], nColunas);
-        //dAtual = 0 significa que o exemplo coincidiu com o centro
-        if((dAtual != 0) && (dAtual < menorDistanca)) {
+        if(dAtual < menorDistanca) {
           menorDistanca = dAtual;
           melhorGrupo = j;
         }
@@ -113,16 +113,23 @@ int main(int argc, char* argv[]) {
     if(!troca)
       break;
 
-    //recomputa os centros depois de atribuídos os exemplos
     for(int i = 0; i < nLinhas; i++) {
-      for(int j = 0; j < nColunas; j++) {
-        if(centros[gID[i]][j] < exemplos[i][j]) {
-          centros[gID[i]][j] = (exemplos[i][j] - centros[gID[i]][j])/2;
-        }
-        else {
-          centros[gID[i]][j] = (centros[gID[i]][j] - exemplos[i][j])/2;
-        }
+      for(int j = 0; j < K; j++) {
+        //qtdExemplosGrupo...contar qts exemplos em cada grupo
       }
+    }
+
+    //recomputa os centros depois de atribuídos os exemplos
+    for(int i = 0; i < nColunas; i++) {
+      //zera acumuladores antes da proxima iteração
+      for(int j = 0; j < K; j++)
+        acumulador[j] = 0;
+      //soma o valor da coordenada i dos exemplos em seu respectivo acumulador
+      for(int j = 0; j < nLinhas; j++)
+        acumulador[gID[j]] += exemplos[j][i];
+      //atualiza o centro com a media dos pontos
+      for(int j = 0; j < K; j++)
+        centros[j][i] = ((acumulador[j])/qtdExemplosGrupo[j]);
     }
   }while(1);
   /* FIM K-MEANS */
@@ -145,6 +152,8 @@ int main(int argc, char* argv[]) {
   fclose(atribuicoesFile);
 
   /* INÍCIO DESALOCAÇÃO DE MEMÓRIA */
+  free(qtdExemplosGrupo);
+  free(acumulador);
   free(gID);
 
   for(int i = 0; i < K; i++)
