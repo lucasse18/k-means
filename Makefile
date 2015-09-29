@@ -1,12 +1,16 @@
 TARGET = kmeans
 
 CC = gcc
-CFLAGS = -std=c99 -Wall -Werror -g
+CFLAGS = -std=c99 -Wall -g
 
-SOURCE = main.c utils.c
+INCLUDE = "include"
+
+SOURCE = src/main.c src/utils.c
 
 LIBS = -lm
 
 $(TARGET): $(SOURCE)
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
+	$(CC) $(CFLAGS) -I $(INCLUDE) $(LIBS) -o $@ $^
 
+teste: src/teste.c
+	$(CC) $(CFLAGS) -o $@ $^
