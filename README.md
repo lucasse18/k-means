@@ -1,8 +1,6 @@
 # k-means
 k-means clustering implementado em C
 
-Fazer: debugar, rever lógica da atribuição e recomputação dos centros
+Fazer: k-means++, terminar yin yang
 
-OK: input, output, memória
-
-testando com ./kmeans , cinicial cfinal gid < input > output
+OK: input, output, memória, k-means simples
