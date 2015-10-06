@@ -211,15 +211,16 @@ int main(int argc, char* argv[]) {
     qtdExemplosGrupo[melhor]++;
   }
 
-  //calcula qualidade do agrupamento
-  for(unsigned i = 0; i < nLinhas; i++)
-    RSS += distancia(exemplos[i], centros[melhorGrupo[i]], nColunas);
-  fprintf(stderr, "RSS: %f\n", RSS);
-
+  //calcula variacao
   for(unsigned i = 0; i < K; i++) {
     variacao[i] = distancia(centros[i], centrosAnt[i], K);
     fprintf(stderr, "Variacao[%d]: %f\n", i, variacao[i]);
   }
+
+  //calcula qualidade do agrupamento
+  for(unsigned i = 0; i < nLinhas; i++)
+    RSS += distancia(exemplos[i], centros[melhorGrupo[i]], nColunas);
+  fprintf(stderr, "RSS: %f\n", RSS);
 
   while(1) {
     //verifica se houve mudança
@@ -260,8 +261,8 @@ int main(int argc, char* argv[]) {
     //atribui
     for(unsigned i = 0; i < nLinhas; i++) {
       //FIXME condicao
-      if(lowerBound[i] - max(variacao, nLinhas) >= (upperBound[i] + distancia(
-          centros[melhorGrupo[i]], centrosAnt[melhorGrupo[i]], nColunas))) {
+//      if(lowerBound[i] - max(variacao, nLinhas) >= (upperBound[i] + distancia(
+//          centros[melhorGrupo[i]], centrosAnt[melhorGrupo[i]], nColunas))) {
         menorDistancia = distancia(exemplos[i], centros[0], nColunas);
         melhor = 0;
         for(unsigned j = 1; j < K; j++) {
@@ -277,7 +278,7 @@ int main(int argc, char* argv[]) {
           melhorGrupo[i] = melhor;
         }
         qtdExemplosGrupo[melhor]++;
-      }
+//      }
     }
 
     //calcula qualidade do agrupamento
