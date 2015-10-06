@@ -1,7 +1,7 @@
 TARGET = kmeans
 
 CC = gcc
-CFLAGS = -std=c99 -Wall -g
+CFLAGS = -std=gnu99 -Wall -Og -ggdb3
 
 INCLUDE = "include"
 
@@ -12,5 +12,8 @@ LIBS = -lm
 $(TARGET): $(SOURCE)
 	$(CC) $(CFLAGS) -I $(INCLUDE) $(LIBS) -o $@ $^
 
-teste: src/teste.c
-	$(CC) $(CFLAGS) -o $@ $^
+clean:
+	rm $(TARGET)
+
+teste: src/teste.c src/utils.c
+	$(CC) $(CFLAGS) -I $(INCLUDE) $(LIBS) -o $@ $^

@@ -1,58 +1,52 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "utils.h"
+#define BUFSIZ 1024
 
 int main() {
 
   char *separador=",";
-  int tamSeparador = 1;
-  int nLinhas = 9;
-  int nColunas = 4;
-  unsigned posatr;
 
-  double **exemplos = (double **)calloc(nLinhas, sizeof(double *));
-  for(int i = 0; i < nLinhas; i++)
-    exemplos[i] = (double *)calloc(nColunas, sizeof(double));
+  unsigned nLinhas, nColunas;
+  fscanf(stdin,"%d %d", &nLinhas, &nColunas);
+  fgetc(stdin);//descarta quebra de linha
 
-  char *aux = (char *)calloc(BUFSIZ, sizeof(char));
-  char *atributo = (char *)calloc(64, sizeof(char));
-  for(unsigned i = 1, posaux = 0; i <= nLinhas; i++, posaux = 0) {
-    fgets(aux, BUFSIZ, stdin);
-    if(aux[0] != '%') {
+  float **exemplos = (float **)calloc(nLinhas, sizeof(float *));
+  for(unsigned i = 0; i < nLinhas; i++)
+    exemplos[i] = (float *)calloc(nColunas, sizeof(float));
+
+  char **grupoVerdadeiro = (char **)calloc(nLinhas, sizeof(char *));
+  for(unsigned i = 0; i < nLinhas; i++)
+    grupoVerdadeiro[i] = (char *)calloc(BUFSIZ, sizeof(char));
+
+  fprintf(stdout, "Alocou.\n");
+
+  char *aux = calloc(2048, sizeof(char));
+  unsigned tamSeparador = (unsigned)strlen(separador);
+  for(unsigned i = 0; i < nLinhas; i++) {
+    if(olhaChar() != 37) {//37 = %
       for(unsigned j = 0; j < nColunas; j++) {
-        posatr = 0;
-        while(aux[posaux] != separador[0]) {
-          if(posatr < 1000)
-            printf("%d ", posatr);
-          atributo[posatr] = aux[posaux];
-          posaux++; posatr++;
-        }
-        printf("acabou while\n");
-        atributo[posatr] = '\0';
-        exemplos[i][j] = atof(atributo);
-        fprintf(stdout, "%g%s", exemplos[i][j], separador);
+        fscanf(stdin, "%f", &exemplos[i][j]);
+        fprintf(stdout, "%.2f%s", exemplos[i][j], separador);//teste
         for(unsigned k = 0; k < tamSeparador; k++)
-          posaux++;//ignora separador
+          fgetc(stdin);//retira separador
       }
-      posatr = 0;
-      while(aux[posaux] != '\n') {
-        printf("%d ", posatr);
-        atributo[posatr] = aux[posaux];
-        posaux++; posatr++;
-      }
-      atributo[posatr] = '\0';
-      //fprintf(stdout, "%s\n", atributo);//teste
+      fgets(grupoVerdadeiro[i], BUFSIZ, stdin);
+      fprintf(stdout, "%s", grupoVerdadeiro[i]);//teste
     }
-    else
-      fprintf(stdout, "comentario detectado\n");
+    else {
+      fgets(aux, BUFSIZ, stdin);//retira comentario
+      i--;
+    }
   }
 
   for(int i = 0; i < nLinhas; i++) {
     free(exemplos[i]);
   }
   free(exemplos);
-
   free(aux);
+
+  for(unsigned i = 0; i < nLinhas; i++)
+    free(grupoVerdadeiro[i]);
+  free(grupoVerdadeiro);
 
   return 0;
 }

@@ -1,8 +1,9 @@
 #include "utils.h"
+#define BUFSIZE 1024
 
 int main(int argc, char* argv[]) {
 
-  if(argc < 6) {
+  if(argc < 7) {
     fprintf(stderr, "Argumentos insuficientes\n");
     exit(EXIT_FAILURE);
   }
@@ -27,170 +28,276 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  //TODO checar se houve erro de alocacao
   unsigned nLinhas, nColunas;
   fscanf(stdin,"%d %d", &nLinhas, &nColunas);
   fgetc(stdin);//descarta quebra de linha
 
   unsigned K = (unsigned)atoi(argv[4]);
 
-  unsigned *gID = calloc(nLinhas, sizeof(unsigned));
+  /* INICIO ALOCACAO MEMORIA */
+  unsigned *melhorDeX = calloc(nLinhas, sizeof(unsigned));
+  if(melhorDeX == NULL) {
+    fprintf(stderr, "Erro de alocacao.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  char *aux = calloc(BUFSIZE, sizeof(char));
+  if(aux == NULL) {
+    fprintf(stderr, "Erro de alocacao.\n");
+    exit(EXIT_FAILURE);
+  }
 
   float **centros = (float **)calloc(K, sizeof(float *));
-  for(unsigned i = 0; i < K; i++)
+  if(centros == NULL) {
+    fprintf(stderr, "Erro de alocacao.\n");
+    exit(EXIT_FAILURE);
+  }
+  for(unsigned i = 0; i < K; i++) {
     centros[i] = (float *)calloc(nColunas, sizeof(float));
+    if(centros[i] == NULL) {
+      fprintf(stderr, "Erro de alocacao.\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  float **centrosAnt = (float **)calloc(K, sizeof(float *));
+  if(centrosAnt == NULL) {
+    fprintf(stderr, "Erro de alocacao.\n");
+    exit(EXIT_FAILURE);
+  }
+  for(unsigned i = 0; i < K; i++) {
+    centrosAnt[i] = (float *)calloc(nColunas, sizeof(float));
+    if(centrosAnt[i] == NULL) {
+      fprintf(stderr, "Erro de alocacao.\n");
+      exit(EXIT_FAILURE);
+    }
+  }
 
   float **exemplos = (float **)calloc(nLinhas, sizeof(float *));
-  for(unsigned i = 0; i < nLinhas; i++)
+  if(exemplos == NULL) {
+    fprintf(stderr, "Erro de alocacao.\n");
+    exit(EXIT_FAILURE);
+  }
+  for(unsigned i = 0; i < nLinhas; i++) {
     exemplos[i] = (float *)calloc(nColunas, sizeof(float));
+    if(exemplos[i] == NULL) {
+      fprintf(stderr, "Erro de alocacao.\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  float *upperBound = (float *)calloc(nLinhas, sizeof(float));
+  if(upperBound == NULL) {
+    fprintf(stderr, "Erro de alocacao.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  float *lowerBound = (float *)calloc(nLinhas, sizeof(float));
+  if(lowerBound == NULL) {
+    fprintf(stderr, "Erro de alocacao.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  float *variacao = (float *)calloc(nLinhas, sizeof(float));
+  if(variacao == NULL) {
+    fprintf(stderr, "Erro de alocacao.\n");
+    exit(EXIT_FAILURE);
+  }
 
   char **grupoVerdadeiro = (char **)calloc(nLinhas, sizeof(char *));
-  for(unsigned i = 0; i < nLinhas; i++)//FIXME alocação não dinâmica de strings
-    grupoVerdadeiro[i] = (char *)calloc(BUFSIZ, sizeof(char));
+  if(grupoVerdadeiro == NULL) {
+    fprintf(stderr, "Erro de alocacao.\n");
+    exit(EXIT_FAILURE);
+  }
+  for(unsigned i = 0; i < nLinhas; i++) {
+    grupoVerdadeiro[i] = (char *)calloc(BUFSIZE, sizeof(char));
+    if(grupoVerdadeiro[i] == NULL) {
+      fprintf(stderr, "Erro de alocacao.\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+  /* FIM ALOCACAO MEMORIA */
 
   /* INÍCIO LEITURA DADOS */
-  unsigned  posatr;
   unsigned tamSeparador = (unsigned)strlen(argv[0]);
-  char *aux = (char *)calloc(BUFSIZ, sizeof(char));
-  char *atributo = (char *)calloc(64, sizeof(char));
-  for(unsigned i = 0, posaux = 0; i < nLinhas; i++, posaux = 0) {
-    fgets(aux, BUFSIZ, stdin);
-    if(aux[0] != '%') {
+  for(unsigned i = 0; i < nLinhas; i++) {
+    if(olhaChar() != '%') {
       for(unsigned j = 0; j < nColunas; j++) {
-        posatr = 0;
-        while(aux[posaux] != argv[0][0]) {
-          //TODO checar tamanho maximo pos
-          atributo[posatr] = aux[posaux];
-          posaux++; posatr++;
-        }
-        atributo[posatr] = '\0';
-        exemplos[i][j] = (float)atof(atributo);
+        fscanf(stdin, "%f", &exemplos[i][j]);
         //fprintf(stdout, "%g%s", exemplos[i][j], argv[0]);//teste
         for(unsigned k = 0; k < tamSeparador; k++)
-          posaux++;//ignora separador
+          fgetc(stdin);//retira separador
       }
-      posatr = 0;
-      while(aux[posaux] != '\n') {
-        atributo[posatr] = aux[posaux];
-        posaux++; posatr++;
+      if(argv[5][0] == 'y') {
+        //retira e guarda coluna de classe se argv[5][0] for igual a y
+        fgets(grupoVerdadeiro[i], BUFSIZE, stdin);
+        //fprintf(stdout, "%s", grupoVerdadeiro[i]);//teste
       }
-      atributo[posatr] = '\n';
-      atributo[posatr+1] = '\0';
-      strcpy(grupoVerdadeiro[i], atributo);//TODO checar erro
-      //fprintf(stdout, "%s", grupoVerdadeiro[i]);//teste
+      else {
+        //retira e ignora coluna de classe se argv[5][0] nao for igual a y
+        fgets(aux, BUFSIZE, stdin);
+        //fputc('\n', stdout);//teste
+      }
     }
-    else
+    else {
+      fgets(aux, BUFSIZE, stdin);
       i--;
+    }
   }
   /* FIM LEITURA DADOS */
 
+  //TODO repetir K-MEANS n vezes e extrair melhor RSS
+  /* INÍCIO K-MEANS */
   //gera os índices dos elementos usados na criação dos grupos iniciais
   int index;
   int *gerados = calloc(K, sizeof(int));
-  srand((unsigned)time(NULL));
+  struct timespec tempo;
+  if (clock_gettime(CLOCK_REALTIME, &tempo) == -1) {
+    perror("clock gettime");
+    exit(EXIT_FAILURE);
+  }
+  __time_t seed =  tempo.tv_sec*tempo.tv_nsec;
+  srand((unsigned int) seed);
+
   for(unsigned i = 0; i < K; i++) {
-    index = rand()%K;
+    index = rand()%nLinhas;
     if(pertence(index, gerados, i))
       i--;
     else
       gerados[i] = index;
   }
 
-  /* INÍCIO K-MEANS */
-  //cria grupos iniciais
+  //inicializa centros aleatorios
   for(unsigned i = 0; i < K; i++) {
     for(unsigned j = 0; j < nColunas; j++) {
       centros[i][j] = exemplos[gerados[i]][j];
-      fprintf(centrosIniciaisFile, "%lf", centros[i][j]);
+      centrosAnt[i][j] = centros[i][j];
+      fprintf(centrosIniciaisFile, "%f", centros[i][j]);
       fprintf(centrosIniciaisFile, "%s", argv[0]);
     }
     fprintf(centrosIniciaisFile, " Exemplo %d\n", gerados[i]);
   }
   fclose(centrosIniciaisFile);
 
-  unsigned melhorGrupo, troca;
-  float menorDistanca, dAtual;
-  float *acumulador = calloc(K, sizeof(float));
-  int *qtdExemplosGrupo = calloc(K, sizeof(int));
+  unsigned melhor = 0, trocas = 0;
+  float menorDistancia, dAtual, RSS = 0;
+  float *acumulador = calloc(K, sizeof(float));//zerado
+  int *qtdExemplosGrupo = calloc(K, sizeof(int));//zerado
 
-  do {
-    for(unsigned i = 0; i < K; i++)
-      qtdExemplosGrupo[i] = 0;
-    troca = 0;
-
-    //para cada ponto, encontra qual o centro mais próximo
-    for(unsigned i = 0; i < nLinhas; i++) {
-      menorDistanca = distancia(exemplos[i], centros[0], nColunas);
-      melhorGrupo = 0;
-      for(unsigned j = 1; j < K; j++) {
-        dAtual = distancia(exemplos[i], centros[j], nColunas);
-        if(dAtual < menorDistanca) {
-          menorDistanca = dAtual;
-          melhorGrupo = j;
-        }
+  //atribui
+  for(unsigned i = 0; i < nLinhas; i++) {
+    menorDistancia = distancia(exemplos[i], centros[0], nColunas);
+    melhor = 0;
+    for(unsigned j = 1; j < K; j++) {
+      dAtual = distancia(exemplos[i], centros[j], nColunas);
+      if(dAtual < menorDistancia) {
+        lowerBound[i] = menorDistancia;
+        menorDistancia = dAtual;
+        upperBound[i] = menorDistancia;
+        melhor = j;
       }
-      if(gID[i] != melhorGrupo) {
-        troca++;
-        gID[i] = melhorGrupo;
-      }
-      qtdExemplosGrupo[melhorGrupo]++;
     }
+    if(melhorDeX[i] != melhor) {
+      trocas++;
+      melhorDeX[i] = melhor;
+    }
+    qtdExemplosGrupo[melhor]++;
+  }
 
-    //FIXME condicao de parada while
+  while(1) {
     //verifica se houve mudança
-    fprintf(stderr, "Trocou:%d ", troca);
-    if(!troca) {
-      fputc('\n', stderr);
+    if(!trocas)
       break;
-    }
 
-    //recomputa os centros depois de atribuídos os exemplos
+    //recomputa
     for(unsigned i = 0; i < nColunas; i++) {
       //zera acumuladores antes da proxima iteração
       for(unsigned j = 0; j < K; j++)
         acumulador[j] = 0;
       //soma o valor da coordenada i dos exemplos em seu respectivo acumulador
       for(unsigned j = 0; j < nLinhas; j++)
-        acumulador[gID[j]] += exemplos[j][i];
+        acumulador[melhorDeX[j]] += exemplos[j][i];
       //atualiza o centro com a media dos pontos
-      for(unsigned j = 0; j < K; j++)
+      for(unsigned j = 0; j < K; j++) {
+        centrosAnt[j][i] = centros[j][i];
         centros[j][i] = ((acumulador[j])/qtdExemplosGrupo[j]);
+      }
     }
-  }while(1);
+    for(unsigned i = 0; i < K; i++) {
+      variacao[i] = distancia(centros[i], centrosAnt[i], K);
+      fprintf(stderr, "Variacao[%d]: %f\n", i, variacao[i]);
+    }
+
+    //calcula qualidade do agrupamento
+    for(unsigned i = 0; i < nLinhas; i++)
+      RSS += distancia(exemplos[i], centros[melhorDeX[i]], nColunas);
+    fprintf(stderr, "RSS: %f\n", RSS);
+
+    //zera contadores
+    RSS = 0; trocas = 0;
+    for(unsigned i = 0; i < K; i++)
+      qtdExemplosGrupo[i] = 0;
+
+    //atribui
+    for(unsigned i = 0; i < nLinhas; i++) {
+      //TODO calcular variacao melhor
+      //if(lowerBound[i] - max(variacao, nLinhas) >= (upperBound[i] + variacaomelhor))
+      menorDistancia = distancia(exemplos[i], centros[0], nColunas);
+      melhor = 0;
+      for(unsigned j = 1; j < K; j++) {
+        dAtual = distancia(exemplos[i], centros[j], nColunas);
+        if(dAtual < menorDistancia) {
+          menorDistancia = dAtual;
+          melhor = j;
+        }
+      }
+      if(melhorDeX[i] != melhor) {
+        trocas++;
+        melhorDeX[i] = melhor;
+      }
+      qtdExemplosGrupo[melhor]++;
+    }
+  }
   /* FIM K-MEANS */
+  //TODO repetir K-MEANS n vezes e extrair melhor RSS
 
   //salva centros finais
   for(unsigned i = 0; i < K; i++) {
     for(unsigned j = 0; j < nColunas; j++) {
-      fprintf(centrosFile, "%lf", centros[i][j]);
+      fprintf(centrosFile, "%f", centros[i][j]);
       fprintf(centrosFile, "%s", argv[0]);//FIXME separador sobrando no fim
     }
     fputc('\n', centrosFile);
   }
 
   //salva atribuicoes
-  for(unsigned i = 0; i < nLinhas; i++) {
-    fprintf(atribuicoesFile, "%d\n", gID[i]);
-  }
+  for(unsigned i = 0; i < nLinhas; i++)
+    fprintf(atribuicoesFile, "%d\n", melhorDeX[i]);
 
   fclose(centrosFile);
   fclose(atribuicoesFile);
 
-  for(unsigned i = 0; i < K; i++) {
-    fprintf(stderr, "%d exeplos no grupo %d\n", qtdExemplosGrupo[i], i);
-  }
+  for(unsigned i = 0; i < K; i++)
+    fprintf(stderr, "%d exemplos no grupo %d\n", qtdExemplosGrupo[i], i);
 
-  for(unsigned i = 0; i < nLinhas; i++) {
-    fprintf(stdout, "Escolhido: %d, Verdadeiro: %s", gID[i], grupoVerdadeiro[i]);
+  if(argv[5][0] == 'y') {
+    for(unsigned i = 0; i < nLinhas; i++)
+      fprintf(stdout, "Escolhido: %d, Verdadeiro: %s", melhorDeX[i], grupoVerdadeiro[i]);
   }
 
   /* INÍCIO DESALOCAÇÃO DE MEMÓRIA */
   free(qtdExemplosGrupo);
   free(acumulador);
-  free(atributo);
   free(gerados);
-  free(gID);
+  free(melhorDeX);
+  free(upperBound);
+  free(lowerBound);
+  free(variacao);
   free(aux);
+
+  for(unsigned i = 0; i < K; i++)
+    free(centrosAnt[i]);
+  free(centrosAnt);
 
   for(unsigned i = 0; i < K; i++)
     free(centros[i]);

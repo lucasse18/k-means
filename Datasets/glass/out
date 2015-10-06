@@ -1,7 +1,214 @@
-17 exeplos no grupo 0
-66 exeplos no grupo 1
-5 exeplos no grupo 2
-7 exeplos no grupo 3
-58 exeplos no grupo 4
-35 exeplos no grupo 5
-26 exeplos no grupo 6
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'vehic wind float'
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: tableware
+Escolhido: 6, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: 'vehic wind float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 0, Verdadeiro: containers
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 6, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 0, Verdadeiro: containers
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 2, Verdadeiro: tableware
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 4, Verdadeiro: containers
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: headlamps
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: 'vehic wind float'
+Escolhido: 6, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: tableware
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 2, Verdadeiro: tableware
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'vehic wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: 'vehic wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 0, Verdadeiro: containers
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 6, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 0, Verdadeiro: 'build wind non-float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: tableware
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 0, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: headlamps
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 4, Verdadeiro: containers
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 0, Verdadeiro: containers
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 3, Verdadeiro: 'vehic wind float'
+Escolhido: 5, Verdadeiro: headlamps
+Escolhido: 1, Verdadeiro: 'build wind non-float'
+Escolhido: 4, Verdadeiro: headlamps
+Escolhido: 0, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: 'build wind non-float'
+Escolhido: 0, Verdadeiro: containers
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 0, Verdadeiro: headlamps
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 0, Verdadeiro: containers
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 0, Verdadeiro: containers
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 4, Verdadeiro: headlamps
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 6, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 0, Verdadeiro: containers
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 6, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 4, Verdadeiro: containers
+Escolhido: 6, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 1, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 0, Verdadeiro: containers
+Escolhido: 0, Verdadeiro: tableware
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 0, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 0, Verdadeiro: containers
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 1, Verdadeiro: tableware
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 0, Verdadeiro: tableware
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 2, Verdadeiro: headlamps
+Escolhido: 5, Verdadeiro: 'build wind float'
+Escolhido: 3, Verdadeiro: 'build wind float'
+Escolhido: 5, Verdadeiro: 'vehic wind float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 5, Verdadeiro: 'build wind non-float'
+Escolhido: 3, Verdadeiro: 'build wind non-float'
+Escolhido: 1, Verdadeiro: tableware
