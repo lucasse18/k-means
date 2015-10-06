@@ -35,8 +35,14 @@ int main(int argc, char* argv[]) {
   unsigned K = (unsigned)atoi(argv[4]);
 
   /* INICIO ALOCACAO MEMORIA */
-  unsigned *melhorDeX = calloc(nLinhas, sizeof(unsigned));
-  if(melhorDeX == NULL) {
+  unsigned *melhorGrupo = calloc(nLinhas, sizeof(unsigned));
+  if(melhorGrupo == NULL) {
+    fprintf(stderr, "Erro de alocacao.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  unsigned *segMelhorGrupo = calloc(nLinhas, sizeof(unsigned));
+  if(segMelhorGrupo == NULL) {
     fprintf(stderr, "Erro de alocacao.\n");
     exit(EXIT_FAILURE);
   }
@@ -197,11 +203,22 @@ int main(int argc, char* argv[]) {
         melhor = j;
       }
     }
-    if(melhorDeX[i] != melhor) {
+    if(melhorGrupo[i] != melhor) {
       trocas++;
-      melhorDeX[i] = melhor;
+      segMelhorGrupo[i] = melhorGrupo[i];
+      melhorGrupo[i] = melhor;
     }
     qtdExemplosGrupo[melhor]++;
+  }
+
+  //calcula qualidade do agrupamento
+  for(unsigned i = 0; i < nLinhas; i++)
+    RSS += distancia(exemplos[i], centros[melhorGrupo[i]], nColunas);
+  fprintf(stderr, "RSS: %f\n", RSS);
+
+  for(unsigned i = 0; i < K; i++) {
+    variacao[i] = distancia(centros[i], centrosAnt[i], K);
+    fprintf(stderr, "Variacao[%d]: %f\n", i, variacao[i]);
   }
 
   while(1) {
@@ -216,22 +233,24 @@ int main(int argc, char* argv[]) {
         acumulador[j] = 0;
       //soma o valor da coordenada i dos exemplos em seu respectivo acumulador
       for(unsigned j = 0; j < nLinhas; j++)
-        acumulador[melhorDeX[j]] += exemplos[j][i];
+        acumulador[melhorGrupo[j]] += exemplos[j][i];
       //atualiza o centro com a media dos pontos
       for(unsigned j = 0; j < K; j++) {
-        centrosAnt[j][i] = centros[j][i];
+        centrosAnt[j][i] = centros[j][i];//salva centro anterior
         centros[j][i] = ((acumulador[j])/qtdExemplosGrupo[j]);
       }
     }
+
+    for(unsigned i = 0; i < nLinhas; i++) {
+      upperBound[i] = distancia(exemplos[i], centros[melhorGrupo[i]], nColunas);
+      lowerBound[i] =distancia(exemplos[i], centros[segMelhorGrupo[i]], nColunas);
+    }
+
+    //calcula variacao dos centros
     for(unsigned i = 0; i < K; i++) {
       variacao[i] = distancia(centros[i], centrosAnt[i], K);
       fprintf(stderr, "Variacao[%d]: %f\n", i, variacao[i]);
     }
-
-    //calcula qualidade do agrupamento
-    for(unsigned i = 0; i < nLinhas; i++)
-      RSS += distancia(exemplos[i], centros[melhorDeX[i]], nColunas);
-    fprintf(stderr, "RSS: %f\n", RSS);
 
     //zera contadores
     RSS = 0; trocas = 0;
@@ -240,23 +259,31 @@ int main(int argc, char* argv[]) {
 
     //atribui
     for(unsigned i = 0; i < nLinhas; i++) {
-      //TODO calcular variacao melhor
-      //if(lowerBound[i] - max(variacao, nLinhas) >= (upperBound[i] + variacaomelhor))
-      menorDistancia = distancia(exemplos[i], centros[0], nColunas);
-      melhor = 0;
-      for(unsigned j = 1; j < K; j++) {
-        dAtual = distancia(exemplos[i], centros[j], nColunas);
-        if(dAtual < menorDistancia) {
-          menorDistancia = dAtual;
-          melhor = j;
+      //FIXME condicao
+      if(lowerBound[i] - max(variacao, nLinhas) >= (upperBound[i] + distancia(
+          centros[melhorGrupo[i]], centrosAnt[melhorGrupo[i]], nColunas))) {
+        menorDistancia = distancia(exemplos[i], centros[0], nColunas);
+        melhor = 0;
+        for(unsigned j = 1; j < K; j++) {
+          dAtual = distancia(exemplos[i], centros[j], nColunas);
+          if(dAtual < menorDistancia) {
+            menorDistancia = dAtual;
+            melhor = j;
+          }
         }
+        if(melhorGrupo[i] != melhor) {
+          trocas++;
+          segMelhorGrupo[i] = melhorGrupo[i];
+          melhorGrupo[i] = melhor;
+        }
+        qtdExemplosGrupo[melhor]++;
       }
-      if(melhorDeX[i] != melhor) {
-        trocas++;
-        melhorDeX[i] = melhor;
-      }
-      qtdExemplosGrupo[melhor]++;
     }
+
+    //calcula qualidade do agrupamento
+    for(unsigned i = 0; i < nLinhas; i++)
+      RSS += distancia(exemplos[i], centros[melhorGrupo[i]], nColunas);
+    fprintf(stderr, "RSS: %f\n", RSS);
   }
   /* FIM K-MEANS */
   //TODO repetir K-MEANS n vezes e extrair melhor RSS
@@ -265,14 +292,15 @@ int main(int argc, char* argv[]) {
   for(unsigned i = 0; i < K; i++) {
     for(unsigned j = 0; j < nColunas; j++) {
       fprintf(centrosFile, "%f", centros[i][j]);
-      fprintf(centrosFile, "%s", argv[0]);//FIXME separador sobrando no fim
+      if(i != K -1)
+        fprintf(centrosFile, "%s", argv[0]);
     }
     fputc('\n', centrosFile);
   }
 
   //salva atribuicoes
   for(unsigned i = 0; i < nLinhas; i++)
-    fprintf(atribuicoesFile, "%d\n", melhorDeX[i]);
+    fprintf(atribuicoesFile, "%d\n", melhorGrupo[i]);
 
   fclose(centrosFile);
   fclose(atribuicoesFile);
@@ -282,14 +310,14 @@ int main(int argc, char* argv[]) {
 
   if(argv[5][0] == 'y') {
     for(unsigned i = 0; i < nLinhas; i++)
-      fprintf(stdout, "Escolhido: %d, Verdadeiro: %s", melhorDeX[i], grupoVerdadeiro[i]);
+      fprintf(stdout, "Escolhido: %d, Verdadeiro: %s", melhorGrupo[i], grupoVerdadeiro[i]);
   }
 
   /* INÍCIO DESALOCAÇÃO DE MEMÓRIA */
   free(qtdExemplosGrupo);
   free(acumulador);
   free(gerados);
-  free(melhorDeX);
+  free(melhorGrupo);
   free(upperBound);
   free(lowerBound);
   free(variacao);
