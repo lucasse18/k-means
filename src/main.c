@@ -227,7 +227,6 @@ int main(int argc, char* argv[]) {
 
     //atribui
     for(unsigned i = 0; i < nLinhas; i++) {
-      //FIXME condicao
       if(lowerBound[i] - max(variacao, K) >= (upperBound[i] + distancia(
           centros[melhorGrupo[i]], centrosAnt[melhorGrupo[i]], nColunas))) {
         menorDistancia = distancia(exemplos[i], centros[0], nColunas);
