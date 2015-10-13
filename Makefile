@@ -1,7 +1,7 @@
 TARGET = kmeans
 
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -O3 -ggdb3
+CFLAGS = -std=gnu99 -Wall -O3
 
 INCLUDE = "include"
 
