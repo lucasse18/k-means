@@ -16,4 +16,3 @@ long *gera(unsigned qtdGrupos, unsigned max);
 void InicializaCentros
     (float ***Centros, float ***Exemplos, long *index,
      unsigned K, unsigned nColunas, FILE *Gerados, char *sep);
-//void liberaDim2(void **ptr, int n);

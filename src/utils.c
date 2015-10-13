@@ -83,9 +83,3 @@ void InicializaCentros
     fprintf(Gerados, " Exemplo %ld\n", index[i]);
   }
 }
-
-//void liberaDim2(void **ptr, int n) {
-//  for(int i = 0; i < n; i++)
-//    free(ptr[i]);
-//  free(ptr);
-//}

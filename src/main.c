@@ -33,6 +33,8 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  free(nomeDoArquivo);
+
   unsigned nLinhas, nColunas;
   fscanf(stdin,"%d %d", &nLinhas, &nColunas);
   fgetc(stdin);//descarta quebra de linha
@@ -286,6 +288,7 @@ int main(int argc, char* argv[]) {
   free(qtdExemplosGrupo);
   free(acumulador);
   free(melhorGrupo);
+  free(segMelhorGrupo);
   free(upperBound);
   free(lowerBound);
   free(variacao);
