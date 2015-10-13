@@ -264,7 +264,7 @@ int main(int argc, char* argv[]) {
   for(unsigned i = 0; i < K; i++) {
     for(unsigned j = 0; j < nColunas; j++) {
       fprintf(centrosFile, "%f", centros[i][j]);
-      if(i != K -1 && j != nColunas - 1)
+      if(j != nColunas - 1)
         fprintf(centrosFile, "%s", argv[0]);
     }
     fputc('\n', centrosFile);
