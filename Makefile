@@ -14,6 +14,3 @@ $(TARGET): $(SOURCE)
 
 clean:
 	rm $(TARGET)
-
-teste: src/teste.c src/utils.c
-	$(CC) $(CFLAGS) -I $(INCLUDE) $(LIBS) -o $@ $^
