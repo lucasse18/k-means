@@ -1,6 +1,6 @@
 # k-means
 k-means clustering implementado em C
 
-Fazer: k-means++, terminar yin yang
+Fazer: k-means++
 
-OK: input, output, memória, k-means simples
+OK: input, output, memória, lemma 1
