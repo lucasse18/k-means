@@ -1,30 +1,35 @@
 #include "utils.h"
-#define BUFSIZE 1024
+#define MY_BUFSIZ 512
 
 int main(int argc, char* argv[]) {
 
-  if(argc < 7) {
+  if(argc < 4) {
     fprintf(stderr, "Argumentos insuficientes\n");
     exit(EXIT_FAILURE);
   }
 
   argv++;//descarta o nome do programa
 
-  FILE *centrosIniciaisFile = fopen(argv[1], "w");
-  if(centrosIniciaisFile == NULL) {
-    fprintf(stderr, "Erro ao abrir arquivo %s", argv[1]);
+  char *nomeDoArquivo = calloc(MY_BUFSIZ, sizeof(char));
+
+  sprintf(nomeDoArquivo, "%s/cini", argv[1]);
+  FILE *centrosIniciais = fopen(nomeDoArquivo, "w");
+  if(centrosIniciais == NULL) {
+    fprintf(stderr, "Erro ao abrir arquivo %s", nomeDoArquivo);
     exit(EXIT_FAILURE);
   }
 
-  FILE *centrosFile = fopen(argv[2], "w");
+  sprintf(nomeDoArquivo, "%s/cfim", argv[1]);
+  FILE *centrosFile = fopen(nomeDoArquivo, "w");
   if(centrosFile == NULL) {
-    fprintf(stderr, "Erro ao abrir arquivo %s", argv[2]);
+    fprintf(stderr, "Erro ao abrir arquivo %s", nomeDoArquivo);
     exit(EXIT_FAILURE);
   }
 
-  FILE *atribuicoesFile = fopen(argv[3], "w");
+  sprintf(nomeDoArquivo, "%s/grupos", argv[1]);
+  FILE *atribuicoesFile = fopen(nomeDoArquivo, "w");
   if(atribuicoesFile == NULL) {
-    fprintf(stderr, "Erro ao abrir arquivo %s", argv[3]);
+    fprintf(stderr, "Erro ao abrir arquivo %s", nomeDoArquivo);
     exit(EXIT_FAILURE);
   }
 
@@ -32,7 +37,7 @@ int main(int argc, char* argv[]) {
   fscanf(stdin,"%d %d", &nLinhas, &nColunas);
   fgetc(stdin);//descarta quebra de linha
 
-  unsigned K = (unsigned)atoi(argv[4]);
+  unsigned K = (unsigned)atoi(argv[2]);
 
   /* INICIO ALOCACAO MEMORIA */
   unsigned *melhorGrupo = calloc(nLinhas, sizeof(unsigned));
@@ -47,8 +52,8 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  char *aux = calloc(BUFSIZE, sizeof(char));
-  if(aux == NULL) {
+  char *comentario = calloc(BUFSIZ, sizeof(char));
+  if(comentario == NULL) {
     fprintf(stderr, "Erro de alocacao.\n");
     exit(EXIT_FAILURE);
   }
@@ -104,27 +109,26 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  float *variacao = (float *)calloc(nLinhas, sizeof(float));
+  float *variacao = (float *)calloc(K, sizeof(float));
   if(variacao == NULL) {
     fprintf(stderr, "Erro de alocacao.\n");
     exit(EXIT_FAILURE);
   }
 
-  char **grupoVerdadeiro = (char **)calloc(nLinhas, sizeof(char *));
+  char **grupoVerdadeiro = (char **) calloc(nLinhas, sizeof(char *));
   if(grupoVerdadeiro == NULL) {
     fprintf(stderr, "Erro de alocacao.\n");
     exit(EXIT_FAILURE);
   }
   for(unsigned i = 0; i < nLinhas; i++) {
-    grupoVerdadeiro[i] = (char *)calloc(BUFSIZE, sizeof(char));
+    grupoVerdadeiro[i] = (char *) calloc(MY_BUFSIZ, sizeof(char));
     if(grupoVerdadeiro[i] == NULL) {
       fprintf(stderr, "Erro de alocacao.\n");
       exit(EXIT_FAILURE);
     }
   }
-  /* FIM ALOCACAO MEMORIA */
 
-  /* INÍCIO LEITURA DADOS */
+  /* LEITURA DADOS */
   unsigned tamSeparador = (unsigned)strlen(argv[0]);
   for(unsigned i = 0; i < nLinhas; i++) {
     if(olhaChar() != '%') {
@@ -134,56 +138,32 @@ int main(int argc, char* argv[]) {
         for(unsigned k = 0; k < tamSeparador; k++)
           fgetc(stdin);//retira separador
       }
-      if(argv[5][0] == 'y') {
-        //retira e guarda coluna de classe se argv[5][0] for igual a y
-        fgets(grupoVerdadeiro[i], BUFSIZE, stdin);
-        //fprintf(stdout, "%s", grupoVerdadeiro[i]);//teste
+      //retira e guarda coluna de classe se argv[3][0] for igual a y
+      if(argv[3][0] == 'y') {
+        fgets(grupoVerdadeiro[i], MY_BUFSIZ, stdin);
       }
+      //retira e ignora coluna de classe se argv[3][0] nao for igual a y
       else {
-        //retira e ignora coluna de classe se argv[5][0] nao for igual a y
-        fgets(aux, BUFSIZE, stdin);
-        //fputc('\n', stdout);//teste
+        fgets(comentario, MY_BUFSIZ, stdin);
       }
     }
     else {
-      fgets(aux, BUFSIZE, stdin);
+      fgets(comentario, MY_BUFSIZ, stdin);
       i--;
     }
   }
-  /* FIM LEITURA DADOS */
 
   //TODO repetir K-MEANS n vezes e extrair melhor RSS
-  /* INÍCIO K-MEANS */
+  /* K-MEANS */
   //gera os índices dos elementos usados na criação dos grupos iniciais
-  int index;
-  int *gerados = calloc(K, sizeof(int));
-  struct timespec tempo;
-  if (clock_gettime(CLOCK_REALTIME, &tempo) == -1) {
-    perror("clock gettime");
-    exit(EXIT_FAILURE);
-  }
-  __time_t seed =  tempo.tv_sec*tempo.tv_nsec;
-  srand((unsigned int) seed);
+  srand48((unsigned int) seed());
+  long *gerados = gera(K, nLinhas);
 
-  for(unsigned i = 0; i < K; i++) {
-    index = rand()%nLinhas;
-    if(pertence(index, gerados, i))
-      i--;
-    else
-      gerados[i] = index;
-  }
-
+  //FIXME menos parametros
   //inicializa centros aleatorios
-  for(unsigned i = 0; i < K; i++) {
-    for(unsigned j = 0; j < nColunas; j++) {
-      centros[i][j] = exemplos[gerados[i]][j];
-      centrosAnt[i][j] = centros[i][j];
-      fprintf(centrosIniciaisFile, "%f", centros[i][j]);
-      fprintf(centrosIniciaisFile, "%s", argv[0]);
-    }
-    fprintf(centrosIniciaisFile, " Exemplo %d\n", gerados[i]);
-  }
-  fclose(centrosIniciaisFile);
+  InicializaCentros(&centros, &exemplos, gerados, K, nColunas, centrosIniciais, argv[0]);
+  fclose(centrosIniciais);
+  free(gerados);
 
   unsigned melhor = 0, trocas = 0;
   float menorDistancia, dAtual, RSS = 0;
@@ -197,9 +177,7 @@ int main(int argc, char* argv[]) {
     for(unsigned j = 1; j < K; j++) {
       dAtual = distancia(exemplos[i], centros[j], nColunas);
       if(dAtual < menorDistancia) {
-        lowerBound[i] = menorDistancia;
         menorDistancia = dAtual;
-        upperBound[i] = menorDistancia;
         melhor = j;
       }
     }
@@ -210,17 +188,6 @@ int main(int argc, char* argv[]) {
     }
     qtdExemplosGrupo[melhor]++;
   }
-
-  //calcula variacao
-  for(unsigned i = 0; i < K; i++) {
-    variacao[i] = distancia(centros[i], centrosAnt[i], K);
-    fprintf(stderr, "Variacao[%d]: %f\n", i, variacao[i]);
-  }
-
-  //calcula qualidade do agrupamento
-  for(unsigned i = 0; i < nLinhas; i++)
-    RSS += distancia(exemplos[i], centros[melhorGrupo[i]], nColunas);
-  fprintf(stderr, "RSS: %f\n", RSS);
 
   while(1) {
     //verifica se houve mudança
@@ -244,7 +211,7 @@ int main(int argc, char* argv[]) {
 
     for(unsigned i = 0; i < nLinhas; i++) {
       upperBound[i] = distancia(exemplos[i], centros[melhorGrupo[i]], nColunas);
-      lowerBound[i] =distancia(exemplos[i], centros[segMelhorGrupo[i]], nColunas);
+      lowerBound[i] = distancia(exemplos[i], centros[segMelhorGrupo[i]], nColunas);
     }
 
     //calcula variacao dos centros
@@ -261,8 +228,8 @@ int main(int argc, char* argv[]) {
     //atribui
     for(unsigned i = 0; i < nLinhas; i++) {
       //FIXME condicao
-//      if(lowerBound[i] - max(variacao, nLinhas) >= (upperBound[i] + distancia(
-//          centros[melhorGrupo[i]], centrosAnt[melhorGrupo[i]], nColunas))) {
+      if(lowerBound[i] - max(variacao, K) >= (upperBound[i] + distancia(
+          centros[melhorGrupo[i]], centrosAnt[melhorGrupo[i]], nColunas))) {
         menorDistancia = distancia(exemplos[i], centros[0], nColunas);
         melhor = 0;
         for(unsigned j = 1; j < K; j++) {
@@ -278,17 +245,20 @@ int main(int argc, char* argv[]) {
           melhorGrupo[i] = melhor;
         }
         qtdExemplosGrupo[melhor]++;
-//      }
+      }
+      else {
+        qtdExemplosGrupo[melhorGrupo[i]]++;
+      }
     }
 
     //calcula qualidade do agrupamento
     for(unsigned i = 0; i < nLinhas; i++)
-      RSS += distancia(exemplos[i], centros[melhorGrupo[i]], nColunas);
+      RSS += upperBound[i];
     fprintf(stderr, "RSS: %f\n", RSS);
   }
-  /* FIM K-MEANS */
   //TODO repetir K-MEANS n vezes e extrair melhor RSS
 
+  /* SALVA RESULTADOS */
   //salva centros finais
   for(unsigned i = 0; i < K; i++) {
     for(unsigned j = 0; j < nColunas; j++) {
@@ -309,20 +279,18 @@ int main(int argc, char* argv[]) {
   for(unsigned i = 0; i < K; i++)
     fprintf(stderr, "%d exemplos no grupo %d\n", qtdExemplosGrupo[i], i);
 
-  if(argv[5][0] == 'y') {
+  if(argv[3][0] == 'y') {
     for(unsigned i = 0; i < nLinhas; i++)
       fprintf(stdout, "Escolhido: %d, Verdadeiro: %s", melhorGrupo[i], grupoVerdadeiro[i]);
   }
 
-  /* INÍCIO DESALOCAÇÃO DE MEMÓRIA */
   free(qtdExemplosGrupo);
   free(acumulador);
-  free(gerados);
   free(melhorGrupo);
   free(upperBound);
   free(lowerBound);
   free(variacao);
-  free(aux);
+  free(comentario);
 
   for(unsigned i = 0; i < K; i++)
     free(centrosAnt[i]);
@@ -339,7 +307,6 @@ int main(int argc, char* argv[]) {
   for(unsigned i = 0; i < nLinhas; i++)
     free(grupoVerdadeiro[i]);
   free(grupoVerdadeiro);
-  /* FIM DESALOCAÇÃO DE MEMÓRIA */
 
   return 0;
 }

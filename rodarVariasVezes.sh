@@ -14,13 +14,14 @@ K=$4
 Y=$5
 ITERACOES=$6
 
-
-MENOR=`./kmeans $SEP $DIR/cini $DIR/cfim $DIR/gid $K $Y < $DIR/$DATASET > $DIR/out | grep RSS | tail -1 | cut -d\  -f 3`;
+MENOR=`./kmeans $SEP $DIR $K $Y < $DIR/$DATASET 2>&1 > $DIR/out | grep RSS | tail -1 | cut -d " " -f 2`;
+echo $MENOR;
 
 for i in `seq 1 $ITERACOES`; do
-  ATUAL=`./kmeans $SEP $DIR/cini $DIR/cfim $DIR/gid $K $Y < $DIR/$DATASET > $DIR/out | grep RSS | tail -1 | cut -d\  -f 3`;
-  if [ $MENOR -gt $ATUAL ]; then
+  ATUAL=`./kmeans $SEP $DIR $K $Y < $DIR/$DATASET 2>&1 > $DIR/out | grep RSS | tail -1 | cut -d " " -f 2`;
+  if [ `echo $MENOR '>' $ATUAL | bc -l` -eq 1 ]; then
     MENOR=$ATUAL;
-    echo $MENOR ;
-  fi  ;
+    echo $MENOR;
+  fi;
 done
+
