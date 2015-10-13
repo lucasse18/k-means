@@ -22,6 +22,6 @@ echo -e "\nSegment-Test"
 echo -e "\nUnbalanced"
 ./kmeans , Datasets/unbalanced 2 y < Datasets/unbalanced/unbalanced.arff > Datasets/unbalanced/out
 
-# echo -e "\n3DRoadNetwork"
-# ./kmeans , Datasets/3DRoadNetwork 4 n < Datasets/3DRoadNetwork/3D_spatial_network.txt > Datasets/3DRoadNetwork/out
+echo -e "\n3DRoadNetwork"
+./kmeans , Datasets/3DRoadNetwork 4 n < Datasets/3DRoadNetwork/3D_spatial_network.txt > Datasets/3DRoadNetwork/out
 
