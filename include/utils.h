@@ -5,14 +5,22 @@
 #include <time.h>
 #include <sys/time.h>
 
-int pertence(long x, long *v, int tam);
+typedef struct data {
+  unsigned nExemplos;
+  unsigned nAtributos;
+  unsigned K;
+}Data;
+
 float max(float *v, int size);
 float delta(float xfin, float xini);
 float distancia(float *v1, float *v2, int n);
 int olhaChar();
+
 time_t seed();
-long aleatorio(unsigned max);
-long *gera(unsigned qtdGrupos, unsigned max);
+unsigned aleatorio(unsigned max);
+
+int comparaInt(const void *a, const void *b);
+float menorDistancia(float *Ponto, float **Centros, unsigned nAtributos, unsigned size);
 void InicializaCentros
-    (float ***Centros, float ***Exemplos, long *index,
-     unsigned K, unsigned nColunas, FILE *Gerados, char *sep);
+    (float ***Centros, float **Exemplos,
+     Data data, FILE *Gerados, char *separador);
