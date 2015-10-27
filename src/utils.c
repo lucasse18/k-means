@@ -13,7 +13,6 @@ inline float delta(float xfin, float xini) {
   return xfin - xini;
 }
 
-//FIXME em algumas ocasioes retorna NaN
 inline float distancia(float *v1, float *v2, int n) {
   float d = 0;
   for(int i = 0; i < n; i++)
@@ -35,23 +34,25 @@ inline time_t seed() {
     perror("clock_gettime");
     exit(EXIT_FAILURE);
   }
+  //fprintf(stderr,"WARNING seed: %d\n", 1067700750);
+  //return 1067700750;
   return tempo.tv_sec*tempo.tv_nsec;
 }
 
-inline unsigned aleatorio(unsigned max) {
-  return (unsigned)lrand48()%max;//FIXME cast gera overflow?
+inline long aleatorio(unsigned max) {
+  return lrand48()%max;
 }
 
-int comparaInt(const void *a, const void *b) {
-  if (*(int *)a < (*(int *)b)) return -1;
-  if (*(int *)a > (*(int *)b)) return 1;
+int comparaFloat(const void *a, const void *b) {
+  if (*(float *)a < (*(float *)b)) return -1;
+  if (*(float *)a > (*(float *)b)) return 1;
   return 0;//igual
 }
 
-float menorDistancia(float *Ponto, float **Centros, unsigned nAtributos, unsigned size) {
+inline float menorDistancia(float *Ponto, float **Centros, unsigned nAtributos, unsigned size) {
   float distanciaAtual;
   float menorDistancia = distancia(Ponto, Centros[0], size);
-  for(unsigned i = 1; i < size; i++) {
+  for(int i = 1; i < size; i++) {
     distanciaAtual = distancia(Ponto, Centros[i], nAtributos);
     if(distanciaAtual < menorDistancia)
       menorDistancia = distanciaAtual;
@@ -59,48 +60,56 @@ float menorDistancia(float *Ponto, float **Centros, unsigned nAtributos, unsigne
   return menorDistancia;
 }
 
-void InicializaCentros
-    (float ***Centros, float **Exemplos,
-     Data data, FILE *Gerados, char *separador) {
+int nao_unico(long *v, int size, long n) {
+  for (int i = 0; i < size; ++i) {
+    if (v[i] == n)
+      return 1;
+  }
+  return 0;
+}
+
+void InicializaCentros(float ***Centros, float **Exemplos, Data data, FILE *Gerados, char *separador) {
 
   double rand;
   float *distancias = malloc(data.nExemplos *sizeof(distancias));
-  unsigned *index = calloc(data.K, sizeof(*index));
+  long *index = malloc(data.K * sizeof(*index));
 
   //inicializa primeiro centro aleatorio
-  index[0] = aleatorio(data.K);
-  for(unsigned i = 0; i < data.nAtributos; i++) {
+  index[0] = aleatorio(data.nExemplos);
+  for(int i = 0; i < data.nAtributos; i++)
     (*Centros)[0][i] = Exemplos[index[0]][i];
-  }
 
   //inicializa os demais centros proporcionalmente as distancias dos centros ja escolhidos
-  for(unsigned i = 1; i < data.K; i++) {
-    //armazena a menor distancia de cada ponto aos centros ja escolhidos
-    for(unsigned j = 0; j < data.nExemplos; j++)
+  for(int i = 1; i < data.K; i++) {
+    //calcula e armazena a menor distancia de cada ponto aos centros ja escolhidos
+    for(int j = 0; j < data.nExemplos; j++)
       distancias[j] = menorDistancia(Exemplos[j], (*Centros), data.nAtributos, i);
 
     //encontra index do exemplo que sera escolhido como proximo centro
-    for(unsigned j = 0; j < data.nExemplos; j++)
+    qsort(distancias, data.nExemplos, sizeof(*distancias), comparaFloat);
+    for(int j = 0; j < data.nExemplos; j++)
       distancias[j] = distancias[j]/distancias[data.nExemplos - 1];
-    qsort(distancias, data.nExemplos, sizeof(*distancias), comparaInt);
-    rand = drand48();
-    while(distancias[index[i]] < rand)
-      (index[i])++;//alocado com calloc, ja zerado
+
+    do {
+      rand = drand48();
+      index[i] = 0;
+      while(distancias[index[i]] < rand)
+        (index[i])++;
+    } while(nao_unico(index, i, index[i]));
 
     //faz a atribuicao
-    for(unsigned j = 0; j < data.nAtributos; j++) {
+    for(int j = 0; j < data.nAtributos; j++)
       (*Centros)[i][j] = Exemplos[index[i]][j];
+  }
+
+  for(int i = 0; i < data.K; i++) {
+    for(int j = 0; j < data.nAtributos; j++) {
+      fprintf(Gerados, "%.4f", (*Centros)[i][j]);
+      fprintf(Gerados, "%s", separador);
     }
+    fprintf(Gerados, " Exemplo %ld\n", index[i]);
   }
 
   free(distancias);
   free(index);
-
-  for(unsigned i = 0; i < data.K; i++) {
-    for(unsigned j = 0; j < data.nAtributos; j++) {
-      fprintf(Gerados, "%f", (*Centros)[i][j]);
-      fprintf(Gerados, "%s", separador);
-    }
-    fprintf(Gerados, " Exemplo %d\n", index[i]);
-  }
 }

@@ -17,10 +17,8 @@ float distancia(float *v1, float *v2, int n);
 int olhaChar();
 
 time_t seed();
-unsigned aleatorio(unsigned max);
+long aleatorio(unsigned max);
 
-int comparaInt(const void *a, const void *b);
+int comparaFloat(const void *a, const void *b);
 float menorDistancia(float *Ponto, float **Centros, unsigned nAtributos, unsigned size);
-void InicializaCentros
-    (float ***Centros, float **Exemplos,
-     Data data, FILE *Gerados, char *separador);
+void InicializaCentros(float ***Centros, float **Exemplos, Data data, FILE *Gerados, char *separador);
