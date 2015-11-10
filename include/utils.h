@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include <time.h>
 #include <sys/time.h>
 
@@ -11,14 +10,14 @@ typedef struct data {
   unsigned K;
 }Data;
 
-float max(float *v, int size);
-float delta(float xfin, float xini);
-float distancia(float *v1, float *v2, int n);
-int olhaChar();
+int olhaChar(FILE *entrada);
+
+double distancia(double *v1, double *v2, size_t size);
+double menorDistancia(double *Ponto, double **Centros, unsigned nAtributos, unsigned size);
+double max(double *v, unsigned int size);
 
 time_t seed();
 long aleatorio(unsigned max);
-
 int comparaFloat(const void *a, const void *b);
-float menorDistancia(float *Ponto, float **Centros, unsigned nAtributos, unsigned size);
-void InicializaCentros(float ***Centros, float **Exemplos, Data data, FILE *Gerados, char *separador);
+void InicializaCentrosClassico(double **Centros, double **Exemplos, Data data, FILE *Gerados, char *separador);
+void InicializaCentrosPP(double **Centros, double **Exemplos, Data data, FILE *Gerados, char *separador);
