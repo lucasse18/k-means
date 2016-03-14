@@ -1,14 +1,10 @@
-TARGET = kmeans
-
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -O3 -ggdb3
+CFLAGS = -std=gnu99 -Wall -ggdb3 -lm
 
-INCLUDE = "include"
+SOURCE = src/main.c\
+	src/vector.c\
+  src/dataset.c\
+	src/kmeans.c
 
-SOURCE = src/main.c src/utils.c
-
-$(TARGET): $(SOURCE)
-	$(CC) $(CFLAGS) -I $(INCLUDE) -o $@ $^
-
-clean:
-	rm $(TARGET)
+kmeans:${SOURCE}
+	${CC} ${CFLAGS} -o $@ $^
