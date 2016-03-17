@@ -35,4 +35,4 @@ int vector_size(Vector *vector);
 void vector_free(Vector *vector);
 
 
-#endif
+#endif //VECTOR_H

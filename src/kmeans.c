@@ -3,7 +3,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "../include/kmeans.h"
+#include "kmeans.h"
 
 void lloyd(double *ex, double *c, int nex, int nat, int k, int *bcls,
            int *nexcl, double *rss) {
@@ -13,7 +13,7 @@ void lloyd(double *ex, double *c, int nex, int nat, int k, int *bcls,
   double dist_atual, dist_menor, delta;
 
   //inicializa todos os exemplos no cluster -1
-  for (i = 0; i < nex; i++)
+  for(i = 0; i < nex; i++)
     bcls[i] = -1;
 
   int flag = 1;
@@ -29,7 +29,7 @@ void lloyd(double *ex, double *c, int nex, int nat, int k, int *bcls,
       dist_menor = INFINITY;
       for(j = 0; j < k; j++) {
         dist_atual = 0.0;
-        for (l = 0; l < nat; l++) {
+        for(l = 0; l < nat; l++) {
           delta = ex[l + nat * i] - c[l + nat * j];
           dist_atual += delta * delta;
         }
@@ -46,10 +46,10 @@ void lloyd(double *ex, double *c, int nex, int nat, int k, int *bcls,
       *rss += dist_menor;
     }
 
-    if (flag) {
+    if(flag) {
       printf("\nPRIMEIRA ATRIBUICAO:\n");
       printf("RSS: %.3f\n", *rss);
-      for (i = 0; i < k; i++)
+      for(i = 0; i < k; i++)
         printf("Numero de exemplos no cluster[%d]: %d\n", i, nexcl[i]);
       printf("\n");
       flag = 0;
@@ -60,32 +60,32 @@ void lloyd(double *ex, double *c, int nex, int nat, int k, int *bcls,
     if(!trocou) break;
 
     //etapa 2: recalcular o novo centro
-    for (i = 0; i < k * nat; i++)
+    for(i = 0; i < k * nat; i++)
       c[i] = 0.0;
 
-    for (i = 0; i < nex; i++)
-      for (j = 0; j < nat; j++)
+    for(i = 0; i < nex; i++)
+      for(j = 0; j < nat; j++)
         c[j + nat * bcls[i]] += ex[j + nat * i];
 
-    for (i = 0; i < k; i++)
-      for (j = 0; j < nat; j++)
-        if (nexcl[i] > 0)
+    for(i = 0; i < k; i++)
+      for(j = 0; j < nat; j++)
+        if(nexcl[i] > 0)
           c[j + nat * i] /= nexcl[i];
   }
 }
 
-double max(double *v, int size, int best) {
+double max(double *v, int size) {
 
-  if (size == 1)
+  if(size == 1)
     return v[0];
 
   double maior = -INFINITY;
 
-  for (int i = 0; i < size; i++)
-    if (v[i] > maior)
+  for(int i = 0; i < size; i++)
+    if(v[i] > maior)
       maior = v[i];
 
-  if (maior == -INFINITY)
+  if(maior == -INFINITY)
     abort();
 
   return maior;
@@ -97,52 +97,53 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
 
   int trocou = 1;
   int i, j, l, antigo_melhor;
-  double dist_atual, dist_menor, seg_dist_menor,delta;
+  double d_atual, d_menor, seg_d_menor,delta;
 
   //inicializa vetores que identificam as medias mais proximas para cada ponto
   for(i = 0; i < nex; i++)
     bcls[i] = secbcls[i] = -1;
 
-  //inicializa a funcao objetivo
-  *rss = 0;
-
   //inicializa numero de elementos de cada cluster
   for(i = 0; i < k; i++)
     nexcl[i] = 0;
 
+  //inicializa a funcao objetivo
+  *rss = 0;
+
   //INICIO PRIMEIRA ATRIBUICAO
   for(i = 0; i < nex; i++) {
 
-    dist_menor = seg_dist_menor = INFINITY;
+    d_menor = seg_d_menor = INFINITY;
 
     //busca pelas medias mais proxima e segunda mais proxima
     for(j = 0; j < k; j++) {
-      dist_atual = 0.0;
+      d_atual = 0.0;
       for(l = 0; l < nat; l++) {
         delta = ex[l + nat * i] - c[l + nat * j];
-        dist_atual += delta * delta;
+        d_atual += delta * delta;
       }
 
       //ao encontrar as distancias menor e segunda menor, inicializa ub e lb
-      if(dist_atual < dist_menor) {
+      if(d_atual < d_menor) {
         //a menor se torna a segunda menor
-        seg_dist_menor = lb[i] = dist_menor;
+        seg_d_menor = lb[i] = d_menor;
         secbcls[i] = bcls[i];
 
-        dist_menor = ub[i] = dist_atual;
+        d_menor = ub[i] = d_atual;
         bcls[i] = j;
       }
-      else if(dist_atual < seg_dist_menor) {
-        seg_dist_menor = lb[i] = dist_atual;
+      else if(d_atual < seg_d_menor) {
+        seg_d_menor = lb[i] = d_atual;
         secbcls[i] = j;
       }
     }
 
-    assert(dist_menor != INFINITY && seg_dist_menor != INFINITY && bcls[i] < k);
+    assert(d_menor != INFINITY && seg_d_menor != INFINITY && bcls[i] < k);
 
     nexcl[bcls[i]]++;
-    *rss += dist_menor;
-  } //FIM PRIMEIRA ATRIBUICAO
+    *rss += d_menor;
+  }
+  //FIM PRIMEIRA ATRIBUICAO
 
   printf("\nPRIMEIRA ATRIBUICAO:\n");
   printf("RSS: %.3f\n", *rss);
@@ -150,7 +151,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
     printf("Numero de exemplos no cluster[%d]: %d\n", i, nexcl[i]);
   printf("\n");
 
-  //salvar centro como centro anterior antes de recomputar
+  //salva centro como centro anterior antes de recomputar
   for(i = 0; i < k * nat; i++) {
     cant[i] = c[i];
     c[i] = 0.0;
@@ -158,7 +159,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
 
   //recomputa cada centro
   for(i = 0; i < nex; i++)
-    for (j = 0; j < nat; j++)
+    for(j = 0; j < nat; j++)
       c[j + nat * bcls[i]] += ex[j + nat * i];
 
   for(i = 0; i < k; i++)
@@ -166,7 +167,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       if(nexcl[i] > 0)
         c[j + nat * i] /= nexcl[i];
 
-  //calcular a variacao de cada cluster
+  //calcula a variacao de cada cluster
   for(i = 0; i < k; i++) {
     var[i] = 0.0;
     for(j = 0; j < nat; j++) {
@@ -178,7 +179,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   //atualiza limites globais de todos os exemplos
   for(i = 0; i < nex; i++) {
     ub[i] += var[bcls[i]];
-    lb[i] -= max(var, k, bcls[i]);
+    lb[i] -= max(var, k);
   }
 
   while(trocou) {
@@ -188,44 +189,44 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
     //etapa 1: atribuir cada exemplo a um cluster
     for(i = 0; i < nex; i++) {
 
-      double p1 = lb[i] - max(var, k, bcls[i]);
-      double p2 = ub[i] + var[bcls[i]];
+      /*double p1 = lb[i] - max(var, k, bcls[i]);
+      double p2 = ub[i] + var[bcls[i]];*/
 
-      if (p1 > p2) {
+      if(lb[i] > ub[i]) {
       //if(1) {
-        dist_menor = seg_dist_menor = INFINITY;
+        d_menor = seg_d_menor = INFINITY;
         antigo_melhor = bcls[i];
 
         //calcula a distancia do exemplo i aos j centros
         for(j = 0; j < k; j++) {
           //calcula a distancia do exemplo i ao centro j
-          dist_atual = 0.0;
+          d_atual = 0.0;
           for(l = 0; l < nat; l++) {
             delta = ex[l + nat * i] - c[l + nat * j];
-            dist_atual += delta * delta;
+            d_atual += delta * delta;
           }
 
-          if(dist_atual < dist_menor) {
+          if(d_atual < d_menor) {
             //a menor se torna a segunda menor
-            seg_dist_menor = dist_menor;
+            seg_d_menor = d_menor;
 
             //melhor cluster se torna o segundo melhor cluster
             //na primeira troca o conteudo de secbcls podera nao fazer sentido,
-            //mas sera atualizado na proxima condicao ja que seg_dist_menor
-            //ainda sera INFINITY (antigo valor de dist_menor)
+            //mas sera atualizado na proxima condicao ja que seg_d_menor
+            //ainda sera INFINITY (antigo valor de d_menor)
             secbcls[i] = bcls[i];
 
-            //atualiza dist_menor e novo_melhor
-            dist_menor = dist_atual;
+            //atualiza d_menor e melhor cluster
+            d_menor = d_atual;
             bcls[i] = j;
           }
-          else if(dist_atual < seg_dist_menor) {
-            seg_dist_menor = dist_atual;
+          else if(d_atual < seg_d_menor) {
+            seg_d_menor = d_atual;
             secbcls[i] = j;
           }
         }
 
-        assert(dist_menor != INFINITY && seg_dist_menor != INFINITY && bcls[i] != secbcls[i]);
+        assert(d_menor != INFINITY && seg_d_menor != INFINITY && bcls[i] != secbcls[i]);
 
         //verifica se de fato houve troca
         if(antigo_melhor != bcls[i]) {
@@ -234,7 +235,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
           trocou = 1;
         }
 
-        *rss += dist_menor;
+        *rss += d_menor;
       }
       else {
         //FIXME como calcular rss entao?
@@ -247,8 +248,8 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
 
     //etapa 2: recalcular os novos centros
 
-    //salvar centro como centro anterior antes de recomputar
-    for (i = 0; i < k * nat; i++) {
+    //salva centro como centro anterior antes de recomputar
+    for(i = 0; i < k * nat; i++) {
       cant[i] = c[i];
       c[i] = 0.0;
     }
@@ -275,21 +276,22 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
     //atualiza limites globais de todos os exemplos
     for(i = 0; i < nex; i++) {
       ub[i] += var[bcls[i]];
-      lb[i] -= max(var, k, bcls[i]);
+      lb[i] -= max(var, k);
     }
   }
 }
 
 int buscaLinear(int key, int *base, int size) {
   int i;
-  for (i = 0; i < size; i++) {
-    if (key == base[i])
+  for(i = 0; i < size; i++) {
+    if(key == base[i])
       return 1;
   }
   return 0;
 }
 
-void inicializa_naive(double *ex, double *c, int nex, int nat, int k, int *gen) {
+void inicializa_naive(double *ex, double *c, int nex,
+                      int nat, int k, int *gen) {
   int i, j,rnd;
 
   for(i = 0; i < k; i++) {
@@ -312,7 +314,8 @@ int compara_double(const void *a, const void *b) {
   return 0;
 }
 
-void inicializa_PP(double *ex, double *c, int nex, int nat, int k, int *gen, double *dist) {
+void inicializa_PP(double *ex, double *c, int nex,
+                   int nat, int k, int *gen, double *dist) {
   int i, j, l, qtd_ja_escolhidos = 0;
   double soma, delta, dist_atual, rnd;
 
@@ -322,7 +325,8 @@ void inicializa_PP(double *ex, double *c, int nex, int nat, int k, int *gen, dou
   for(i = 0; i < nat; i++)
       c[i] = ex[i + gen[0] * nat];
 
-  //escolhe os demais centros de acordo com a distancia em relacao aos ja escolhidos
+  //escolhe os demais centros de acordo com a distancia
+  //em relacao aos ja escolhidos
   while(qtd_ja_escolhidos < k) {
     soma = 0;
     for(i = 0; i < nex; i++) {
@@ -349,11 +353,11 @@ void inicializa_PP(double *ex, double *c, int nex, int nat, int k, int *gen, dou
       i++;
     }
 
-    //validar o centro escolhido, verificando se ele ja foi escolhido em outra iteracao
-    //se o centro nao for validado qtd_ja_escolhidos nao sera incrementada
-    //e o loop sera realizado mais uma vez
+    //validar o centro escolhido, verificando se ele ja foi escolhido em outra
+    //iteracao. se o centro nao for validado qtd_ja_escolhidos nao sera
+    //incrementada e o loop sera realizado mais uma vez HACK
     //FIXME gerar outro numero aleatorio ao inves de recalcular distancias
-    if (!buscaLinear(i, gen, qtd_ja_escolhidos))
+    if(!buscaLinear(i, gen, qtd_ja_escolhidos))
       gen[qtd_ja_escolhidos++] = i;
 
   }

@@ -93,7 +93,6 @@ int main(int argc, char *argv[]) {
     case '?':
       /* getopt_long already printed an error message. */
       exit(1);
-      break;
 
     default:
       abort();
@@ -101,7 +100,8 @@ int main(int argc, char *argv[]) {
   }
 
   if(data_file == NULL) {
-    die("please specify at least the dataset to be clustered");
+    die("please specify at least the dataset to be clustered\n\
+         kmeans -d [path/to/file]");
   }
 
   Dataset data;
@@ -110,9 +110,9 @@ int main(int argc, char *argv[]) {
   //se k nao foi setado, utilizar o criterio de oliveira
   if(k == 0) {
     if(data.nex <= 100)
-      k = sqrt(data.nex);
+      k = (int) sqrt(data.nex);
     else
-      k = 5 * log10(data.nex);
+      k = (int) (5 * log10(data.nex));
   }
 
   printf("NEX: %d, ", data.nex);
@@ -146,6 +146,7 @@ int main(int argc, char *argv[]) {
     lloyd(data.ex.vec, centros, data.nex, data.nat, k, bcls, nexcl, &rss);
     break;
 
+  //TODO algoritmo yinyang em progresso(WIP)
   case 2:
     cant = malloc(k * data.nat * sizeof(double));
     assert(cant);
@@ -158,6 +159,7 @@ int main(int argc, char *argv[]) {
     secbcls = malloc(data.nex * sizeof(int));
     assert(secbcls);
 
+    inicializa_naive(data.ex.vec, centros, data.nex, data.nat, k, gerados);
     yinyang(data.ex.vec, centros, cant, ub, lb, var, data.nex,
             data.nat, k, bcls, secbcls, nexcl, &rss);
 
@@ -168,6 +170,7 @@ int main(int argc, char *argv[]) {
     free(secbcls);
     break;
 
+  //TODO algoritmo kmeans++ em progresso(WIP)
   case 3:
     dist = malloc(data.nex * sizeof(double));
     assert(dist);

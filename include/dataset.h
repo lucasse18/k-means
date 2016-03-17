@@ -20,4 +20,4 @@ void dataset_init(Dataset *data, FILE *data_file);
 void dataset_free(Dataset *data);
 
 
-#endif
+#endif //DATASET_H

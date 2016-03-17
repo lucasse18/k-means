@@ -1,4 +1,4 @@
-#include "../include/dataset.h"
+#include "dataset.h"
 
 #define MAX_LINE_LENGTH BUFSIZ
 
