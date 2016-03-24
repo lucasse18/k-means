@@ -95,9 +95,9 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
              double *lb, double *var, int nex, int nat, int k,
              int *bcls, int *secbcls, int *nexcl, double *rss) {
 
-  int trocou = 1;
+  int trocou = 1, itr_count=0;
   int i, j, l, antigo_melhor;
-  double d_atual, d_menor, seg_d_menor,delta;
+  double d_atual, d_menor, seg_d_menor, delta, maxvar;
 
   //inicializa vetores que identificam as medias mais proximas para cada ponto
   for(i = 0; i < nex; i++)
@@ -138,8 +138,6 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       }
     }
 
-    assert(d_menor != INFINITY && seg_d_menor != INFINITY && bcls[i] < k);
-
     nexcl[bcls[i]]++;
     *rss += d_menor;
   }
@@ -152,10 +150,12 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   printf("\n");
 
   //salva centro como centro anterior antes de recomputar
+  /*
   for(i = 0; i < k * nat; i++) {
     cant[i] = c[i];
     c[i] = 0.0;
   }
+  */
 
   //recomputa cada centro
   for(i = 0; i < nex; i++)
@@ -167,6 +167,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       if(nexcl[i] > 0)
         c[j + nat * i] /= nexcl[i];
 
+  /*
   //calcula a variacao de cada cluster
   for(i = 0; i < k; i++) {
     var[i] = 0.0;
@@ -177,23 +178,24 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   }
 
   //atualiza limites globais de todos os exemplos
+  maxvar = max(var, k);
+  assert(maxvar != INFINITY);
   for(i = 0; i < nex; i++) {
     ub[i] += var[bcls[i]];
-    lb[i] -= max(var, k);
+    lb[i] -= maxvar;
   }
+  */
 
+  int calculos_evitados=0;
   while(trocou) {
+    itr_count++;
     *rss = 0.0;
     trocou = 0;
 
     //etapa 1: atribuir cada exemplo a um cluster
     for(i = 0; i < nex; i++) {
 
-      /*double p1 = lb[i] - max(var, k, bcls[i]);
-      double p2 = ub[i] + var[bcls[i]];*/
-
       if(lb[i] > ub[i]) {
-      //if(1) {
         d_menor = seg_d_menor = INFINITY;
         antigo_melhor = bcls[i];
 
@@ -212,7 +214,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
 
             //melhor cluster se torna o segundo melhor cluster
             //na primeira troca o conteudo de secbcls podera nao fazer sentido,
-            //mas sera atualizado na proxima condicao ja que seg_d_menor
+            //mas sera atualizado na proxima iteracao ja que seg_d_menor
             //ainda sera INFINITY (antigo valor de d_menor)
             secbcls[i] = bcls[i];
 
@@ -226,8 +228,6 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
           }
         }
 
-        assert(d_menor != INFINITY && seg_d_menor != INFINITY && bcls[i] != secbcls[i]);
-
         //verifica se de fato houve troca
         if(antigo_melhor != bcls[i]) {
           nexcl[antigo_melhor]--;
@@ -238,7 +238,8 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
         *rss += d_menor;
       }
       else {
-        //FIXME como calcular rss entao?
+        //FIXME como calcular rss?
+        calculos_evitados++;
         *rss += ub[i];
       }
     }
@@ -274,11 +275,20 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
     }
 
     //atualiza limites globais de todos os exemplos
+    maxvar = max(var, k);
     for(i = 0; i < nex; i++) {
       ub[i] += var[bcls[i]];
-      lb[i] -= max(var, k);
+      lb[i] -= maxvar;
     }
-  }
+
+  }// fim while
+
+  int total_operacoes = itr_count * nex;
+  printf("\nIteracoes: %d\n", itr_count);
+  printf("Total de Calculos: %d\n", total_operacoes);
+  printf("Realizados: %d\n", total_operacoes - calculos_evitados);
+  printf("Evitados: %d\n", calculos_evitados);
+  printf("Taxa: %.2f\n\n", (double)calculos_evitados/(double)total_operacoes);
 }
 
 int buscaLinear(int key, int *base, int size) {

@@ -14,9 +14,10 @@ void dataset_init(Dataset *data, FILE *data_file) {
   while (fgets(linha, MAX_LINE_LENGTH, data_file) != NULL) {
     if (linha[0] != '%') {
       if (last_attribute_count != -1 && last_attribute_count != attribute_count) {
-        printf("ERROR: Datasets with missing attributes not supported.\n");
-        printf("current attribute count: %d\n", attribute_count);
-        printf("last attribute count: %d\n", last_attribute_count);
+        printf("ERROR: Datasets with missing attributes not supported.\n\
+                current attribute count: %d\n\
+                last attribute count: %d\n",
+                attribute_count, last_attribute_count);
         exit(1);
       }
       attribute_count = 0;

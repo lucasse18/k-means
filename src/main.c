@@ -3,7 +3,6 @@
 #include <getopt.h>
 #include <assert.h>
 #include <time.h>
-#include <limits.h>
 #include <math.h>
 
 #include "../include/dataset.h"
@@ -23,7 +22,7 @@ int main(int argc, char *argv[]) {
   int algorithm = 1;//default lloyd
 
   static struct option long_opts[] = {
-    {"dataset",   required_argument, 0,         'd'},//FIXME opcao obrigatoria
+    {"dataset",   required_argument, 0,         'd'},
     {"outfile",   required_argument, 0,         'o'},//default stdout, ainda nao usado
     {"algorithm", required_argument, 0,         'a'},//default lloyd(1)
     {"groups",    required_argument, &k,        'k'},//default criterio de oliveira
@@ -108,16 +107,19 @@ int main(int argc, char *argv[]) {
   DATASET_INIT(data, data_file);
 
   //se k nao foi setado, utilizar o criterio de oliveira
-  if(k == 0) {
+  //FIXME avisar se k > data.nex
+  if(k == 0 || k > data.nex) {
     if(data.nex <= 100)
       k = (int) sqrt(data.nex);
     else
       k = (int) (5 * log10(data.nex));
   }
 
+  /*
   printf("NEX: %d, ", data.nex);
   printf("NAT: %d, ", data.nat);
   printf("K: %d\n", k);
+  */
 
   double *centros = malloc(k * data.nat * sizeof(double));
   assert(centros);
