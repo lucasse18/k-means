@@ -1,8 +1,8 @@
-CC = gcc
-STD=-std=gnu99
-DBG=-ggdb3 -Wall
-LIBM=-lm
-INC=include
+CC   = gcc
+STD  = -std=gnu99
+DBG  = -ggdb3 -Wall
+LIBM = -lm
+INC  = include
 
 CFLAGS = ${STD} ${DBG} ${LIBM} -I ${INC}
 
