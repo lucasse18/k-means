@@ -155,6 +155,7 @@ int main(int argc, char *argv[]) {
       free(lb);
       free(var);
       free(secbcls);
+      free(gerados);
       break;
 
     //TODO algoritmo kmeans++ em progresso(WIP)
@@ -177,15 +178,14 @@ int main(int argc, char *argv[]) {
 
   DATASET_FREE(data);
 
-  if(outfile != NULL && outfile != stdout)
-    fclose(outfile);
-
+  if(outfile != stdout) fclose(outfile);
   free(centros);
   free(bcls);
   free(nexcl);
 
   return 0;
 
+  //liberar recursos e sair em caso de erro
   error:
   if(outfile  != stdout) fclose(outfile);
   if(datafile != NULL)   fclose(datafile);
@@ -205,10 +205,9 @@ int main(int argc, char *argv[]) {
 void print_usage() {
   printf("Usage: kmeans [options] file...\n");
   printf("Options:\n");
-  printf("  -d, --dataset     Dataset to be clustered.\n");
   printf("  -a, --algorithm   Algorithm to be used in clustering.\n");
   printf("  -k, --clusters    Number of clusters to create.\n");
-  printf("  -s, --seed        Seed used in the initialization algorithm.\n");
+  printf("  -s, --seed        Seed used by the initialization algorithm.\n");
 }
 
 int get_alg_code(const char *optarg) {

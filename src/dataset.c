@@ -1,4 +1,5 @@
 #include "dataset.h"
+#include "dbg.h"
 
 #define MAX_LINE_LENGTH BUFSIZ
 
@@ -14,9 +15,9 @@ void dataset_init(Dataset *data, FILE *data_file) {
   while (fgets(linha, MAX_LINE_LENGTH, data_file) != NULL) {
     if (linha[0] != '%') {
       if (last_attribute_count != -1 && last_attribute_count != attribute_count) {
-        printf("ERROR: Datasets with missing attributes not supported.\n\
+        log_err("datasets with missing attributes not supported.\n\
                 current attribute count: %d\n\
-                last attribute count: %d\n",
+                last attribute count: %d",
                 attribute_count, last_attribute_count);
         exit(1);
       }
@@ -31,10 +32,8 @@ void dataset_init(Dataset *data, FILE *data_file) {
       fclose(string_stream);
     }
   }
-  if (feof(data_file) && data_file != stdin)
-    fclose(data_file);
-  else {
-    printf("ERROR: fgets returned NULL before EOF.");
+  if (!feof(data_file)) {
+    log_err("fgets returned NULL before EOF.");
     exit(1);
   }
 
