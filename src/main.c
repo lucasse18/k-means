@@ -1,96 +1,83 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <getopt.h>
-#include <assert.h>
 #include <time.h>
 #include <math.h>
 
-#include "../include/dataset.h"
-#include "../include/kmeans.h"
+#include "dbg.h"
+#include "dataset.h"
+#include "kmeans.h"
 
-void die(const char *message) {
-  fprintf(stderr, "%s\n", message);
-  exit(1);
-}
+void print_usage();
+int get_alg_code(const char *optarg);
 
 int main(int argc, char *argv[]) {
 
-  FILE *data_file = NULL;
-  FILE *outfile = stdout;
+  //geral
+  double *centros = NULL;
+  int *bcls       = NULL;
+  int *nexcl      = NULL;
+  int *gerados    = NULL;
+  double rss = 0.0;
+  //yin yang
+  double *cant    = NULL;
+  double *ub      = NULL;
+  double *lb      = NULL;
+  double *var     = NULL;
+  int *secbcls    = NULL;
+  //kmeanspp
+  double *dist    = NULL;
+
+  FILE *datafile = NULL;
+  FILE *outfile  = stdout;
   static int k = 0;
-  static int class_flag = 0;
-  int algorithm = 1;//default lloyd
+  static int alg = 1;
+  static int user_seed = -1;
 
   static struct option long_opts[] = {
-    {"dataset",   required_argument, 0,         'd'},
-    {"outfile",   required_argument, 0,         'o'},//default stdout, ainda nao usado
-    {"algorithm", required_argument, 0,         'a'},//default lloyd(1)
-    {"groups",    required_argument, &k,        'k'},//default criterio de oliveira
-    {"no-class",  no_argument,       &class_flag, 1},//TODO ainda nao usado
-    {0,           0,                 0,           0}
+    {"help",      no_argument,       0,          'h'},
+    {"outfile",   required_argument, 0,          'o'},//ainda nao usado, default stdout
+    {"algorithm", required_argument, 0,          'a'},//default lloyd (1)
+    {"clusters",  required_argument, &k,         'k'},//default criterio de oliveira
+    {"seed",      required_argument, &user_seed, 's'},//default time(NULL)
+    {0,           0,                 0,            0}
   };
 
   int opt_index = 0;
   int c;
 
-  while((c = getopt_long (argc, argv, "d:o:a:k:n", long_opts, &opt_index)) != -1) {
-
+  while((c = getopt_long (argc, argv, "ho:a:k:s:n", long_opts, &opt_index)) != -1) {
     switch(c) {
     case 0:
       break;
 
-    //TODO help message
-
-    case 'd':
-      //printf("option -d with value `%s'\n", optarg);
-      if(data_file != NULL)//caso passar -d duas vezes
-        fclose(data_file);
-      if(!strcmp(optarg, "stdin")  ||
-         !strcmp(optarg, "stdout") ||
-         !strcmp(optarg, "NULL")) {
-        die("please specify a valid archive name");
-      }
-
-      data_file = fopen(optarg, "r");
-      break;
+    case 'h':
+      print_usage();
+      goto error;
 
     case 'o':
-      //printf("option -o with value `%s'\n", optarg);
-      if(outfile != stdout)//caso passar -o duas vezes
-        fclose(outfile);
-      if(!strcmp(optarg, "stdin")  ||
-         !strcmp(optarg, "stdout") ||
-         !strcmp(optarg, "NULL")) {
-        die("please specify a valid archive name");
-      }
-
+      check(outfile == stdout, "duplicate option -o.")
       outfile = fopen(optarg, "w");
+      check(outfile != NULL, "could not open file for writing.");
       break;
 
     case 'a':
-      //printf("option -a with value `%s'\n", optarg);
-      if(strcmp("lloyd", optarg) == 0)
-        algorithm = 1;
-      else if(strcmp("yinyang", optarg) == 0)
-        algorithm = 2;
-      else if(strcmp("kmeanspp", optarg) == 0)
-        algorithm = 3;
-      else if(strcmp("yinyangpp", optarg) == 0)
-        algorithm = 4;
-      else
-        fprintf(stderr, "warning: invalid algorithm, defaulting to lloyd.\n");
+      alg = get_alg_code(optarg);
+      check(alg > 0, "invalid algorithm.");
       break;
 
     case 'k':
-      //printf("option -k with value `%s'\n", optarg);
       k = atoi(optarg);
-      if(k <= 0) {
-        die("the number of groups (option -k) must be greater than zero");
-      }
+      check(k > 0, "the number of clusters to create must be greater than zero.");
+      break;
+
+      case 's':
+      user_seed = atoi(optarg);
       break;
 
     case '?':
-      /* getopt_long already printed an error message. */
+      // user passed an unsupported option
+      // getopt_long already printed an error message
       exit(1);
 
     default:
@@ -98,102 +85,141 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if(data_file == NULL) {
-    die("please specify at least the dataset to be clustered\n\
-         kmeans -d [path/to/file]");
+  if(argv[optind] == NULL) {
+    fprintf(stderr, "kmeans: no dataset specified.\n");
+    goto error;
+  }
+
+  datafile = fopen(argv[optind], "r");
+  check(datafile != NULL, "could not open file for reading.");
+
+  if(user_seed != -1)
+    srand48(user_seed);
+  else {
+    time_t seed = time(NULL);
+    srand48(seed);
+    log_info("seed: %li", seed);
   }
 
   Dataset data;
-  DATASET_INIT(data, data_file);
+  DATASET_INIT(data, datafile);
+  fclose(datafile);
 
-  //se k nao foi setado, utilizar o criterio de oliveira
-  //FIXME avisar se k > data.nex
-  if(k == 0 || k > data.nex) {
+  //se usuario nao definiu k, utilizar o criterio de oliveira
+  //FIXME o que fazer quando k > nex?
+  if(k == 0) {
     if(data.nex <= 100)
       k = (int) sqrt(data.nex);
     else
       k = (int) (5 * log10(data.nex));
   }
 
-  /*
-  printf("NEX: %d, ", data.nex);
-  printf("NAT: %d, ", data.nat);
-  printf("K: %d\n", k);
-  */
+  log_info("NEX: %d, NAT: %d, K: %d", data.nex, data.nat, k);
 
-  double *centros = malloc(k * data.nat * sizeof(double));
-  assert(centros);
-  int *bcls = malloc(data.nex * sizeof(int));
-  assert(bcls);
-  int *nexcl = malloc(k * sizeof(int));
-  assert(nexcl);
-  int gerados[k];
-  double rss = 0.0;
+  centros = malloc(k * data.nat * sizeof(double));
+  check_mem(centros);
+  bcls = malloc(data.nex * sizeof(int));
+  check_mem(bcls);
+  nexcl = malloc(k * sizeof(int));
+  check_mem(nexcl);
+  gerados = malloc(k * sizeof(int));
+  check_mem(gerados);
 
-  //yin yang
-  double *cant = 0;
-  double *ub = 0;
-  double *lb = 0;
-  double *var = 0;
-  int *secbcls = 0;
+  switch(alg) {
+    case 1:
+      printf("*LLOYD*\n");
+      inicializa_naive(data.ex.vec, centros, data.nex, data.nat, k, gerados);
+      lloyd(data.ex.vec, centros, data.nex, data.nat, k, bcls, nexcl, &rss);
+      break;
 
-  //kmeanspp
-  double *dist;
+    //TODO algoritmo yinyang em progresso(WIP)
+    case 2:
+      cant = malloc(k * data.nat * sizeof(double));
+      check_mem(cant);
+      ub = malloc(data.nex * sizeof(double));
+      check_mem(ub);
+      lb = malloc(data.nex * sizeof(double));
+      check_mem(lb);
+      var = malloc(k * sizeof(double));
+      check_mem(var);
+      secbcls = malloc(data.nex * sizeof(int));
+      check_mem(secbcls);
 
-  srand48(1);
+      printf("*YINYANG*\n");
+      inicializa_naive(data.ex.vec, centros, data.nex, data.nat, k, gerados);
+      yinyang(data.ex.vec, centros, cant, ub, lb, var, data.nex,
+              data.nat, k, bcls, secbcls, nexcl, &rss);
 
-  switch(algorithm) {
-  case 1:
-    inicializa_naive(data.ex.vec, centros, data.nex, data.nat, k, gerados);
-    lloyd(data.ex.vec, centros, data.nex, data.nat, k, bcls, nexcl, &rss);
-    break;
+      free(cant);
+      free(ub);
+      free(lb);
+      free(var);
+      free(secbcls);
+      break;
 
-  //TODO algoritmo yinyang em progresso(WIP)
-  case 2:
-    cant = malloc(k * data.nat * sizeof(double));
-    assert(cant);
-    ub = malloc(data.nex * sizeof(double));
-    assert(ub);
-    lb = malloc(data.nex * sizeof(double));
-    assert(lb);
-    var = malloc(k * sizeof(double));
-    assert(var);
-    secbcls = malloc(data.nex * sizeof(int));
-    assert(secbcls);
+    //TODO algoritmo kmeans++ em progresso(WIP)
+    case 3:
+      dist = malloc(data.nex * sizeof(double));
+      check_mem(dist);
 
-    inicializa_naive(data.ex.vec, centros, data.nex, data.nat, k, gerados);
-    yinyang(data.ex.vec, centros, cant, ub, lb, var, data.nex,
-            data.nat, k, bcls, secbcls, nexcl, &rss);
+      inicializa_PP(data.ex.vec, centros, data.nex, data.nat, k, gerados, dist);
+      lloyd(data.ex.vec, centros, data.nex, data.nat, k, bcls, nexcl, &rss);
 
-    free(cant);
-    free(ub);
-    free(lb);
-    free(var);
-    free(secbcls);
-    break;
+      free(dist);
+      break;
 
-  //TODO algoritmo kmeans++ em progresso(WIP)
-  case 3:
-    dist = malloc(data.nex * sizeof(double));
-    assert(dist);
-
-    inicializa_PP(data.ex.vec, centros, data.nex, data.nat, k, gerados, dist);
-    lloyd(data.ex.vec, centros, data.nex, data.nat, k, bcls, nexcl, &rss);
-
-    free(dist);
-    break;
-
-  default:
-    //nao faz sentido cair em default, abortar
-    abort();
+    default:
+      abort();
   }
 
   for(int i = 0; i < k; i++)
-    printf("Exemplos no cluster [%d]: %d\n", i, nexcl[i]);
+    printf("exemplos no cluster [%d]: %d\n", i, nexcl[i]);
 
   DATASET_FREE(data);
+
+  if(outfile != NULL && outfile != stdout)
+    fclose(outfile);
+
   free(centros);
   free(bcls);
   free(nexcl);
+
   return 0;
+
+  error:
+  if(outfile  != stdout) fclose(outfile);
+  if(datafile != NULL)   fclose(datafile);
+  if(centros  != NULL)   free(centros);
+  if(bcls     != NULL)   free(bcls);
+  if(nexcl    != NULL)   free(nexcl);
+  if(gerados  != NULL)   free(gerados);
+  if(cant     != NULL)   free(cant);
+  if(ub       != NULL)   free(ub);
+  if(lb       != NULL)   free(lb);
+  if(var      != NULL)   free(var);
+  if(secbcls  != NULL)   free(secbcls);
+  if(dist     != NULL)   free(dist);
+  exit(1);
+}
+
+void print_usage() {
+  printf("Usage: kmeans [options] file...\n");
+  printf("Options:\n");
+  printf("  -d, --dataset     Dataset to be clustered.\n");
+  printf("  -a, --algorithm   Algorithm to be used in clustering.\n");
+  printf("  -k, --clusters    Number of clusters to create.\n");
+  printf("  -s, --seed        Seed used in the initialization algorithm.\n");
+}
+
+int get_alg_code(const char *optarg) {
+  if(strcmp("ll", optarg) == 0)
+    return 1;
+  if(strcmp("yy", optarg) == 0)
+    return 2;
+  if(strcmp("pp", optarg) == 0)
+    return 3;
+  if(strcmp("yypp", optarg) == 0)
+    return 4;
+
+  return -1;
 }
