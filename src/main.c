@@ -90,13 +90,22 @@ int main(int argc, char *argv[]) {
     goto error;
   }
 
-  datafile = fopen(argv[optind], "r");
-  check(datafile != NULL, "could not open file for reading.");
+  char *final_filename = malloc(sizeof(char) * (2 * strlen(argv[optind])) + 16);
+  strcpy(final_filename, "datasets/");
+  strcat(final_filename, argv[optind]);
+  strcat(final_filename, "/");
+  strcat(final_filename, argv[optind]);
+  strcat(final_filename, ".arff");
+  datafile = fopen(final_filename, "r");
+  check(datafile != NULL, "could not open file %s for reading.", final_filename);
+  free(final_filename);
 
-  if(user_seed != -1)
+  if(user_seed != -1) {
     srand48(user_seed);
+    log_info("seed: %d", user_seed);
+  }
   else {
-    time_t seed = time(NULL);
+    long seed = time(NULL);
     srand48(seed);
     log_info("seed: %li", seed);
   }
@@ -113,8 +122,6 @@ int main(int argc, char *argv[]) {
     else
       k = (int) (5 * log10(data.nex));
   }
-
-  log_info("NEX: %d, NAT: %d, K: %d", data.nex, data.nat, k);
 
   centros = malloc(k * data.nat * sizeof(double));
   check_mem(centros);
@@ -205,9 +212,9 @@ int main(int argc, char *argv[]) {
 void print_usage() {
   printf("Usage: kmeans [options] file...\n");
   printf("Options:\n");
-  printf("  -a, --algorithm   Algorithm to be used in clustering.\n");
-  printf("  -k, --clusters    Number of clusters to create.\n");
-  printf("  -s, --seed        Seed used by the initialization algorithm.\n");
+  printf("  -a, --algorithm <ll,yy>  Algorithm to be used for clustering.\n");
+  printf("  -k, --clusters <arg>     Number of clusters to create.\n");
+  printf("  -s, --seed <arg>         Seed used by the initialization algorithm.\n");
 }
 
 int get_alg_code(const char *optarg) {
