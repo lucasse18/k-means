@@ -76,9 +76,6 @@ double max(double *v, int size) {
     if(v[i] > maior)
       maior = v[i];
 
-  if(maior == -INFINITY)
-    abort();
-
   return maior;
 }
 
@@ -113,29 +110,41 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
         delta = ex[l + nat * i] - c[l + nat * j];
         d_atual += delta * delta;
       }
+      check(d_atual >= 0, "distancia negativa");
 
       //ao encontrar as distancias menor e segunda menor, inicializa ub e lb
       if(d_atual < d_menor) {
         //a menor se torna a segunda menor
-        seg_d_menor = lb[i] = d_menor;
+        seg_d_menor = d_menor;
+        lb[i] = d_menor;
         secbcls[i] = bcls[i];
 
-        d_menor = ub[i] = d_atual;
+        //nova melhor
+        d_menor = d_atual;
+        ub[i] = d_atual;
         bcls[i] = j;
       }
       else if(d_atual < seg_d_menor) {
-        seg_d_menor = lb[i] = d_atual;
+        seg_d_menor = d_atual;
+        lb[i] = d_atual;
         secbcls[i] = j;
       }
     }
+
+    check(d_menor != seg_d_menor, "d_menor == seg_d_menor");
+    check(d_menor != INFINITY && seg_d_menor != INFINITY, "");
+
+    check(bcls[i] != secbcls[i], "bcls[%d] == secbcls[%d]", i, i);
+    check(bcls[i] >= 0 && bcls[i] < k, "bcls[%d] fora do intervalo [0,k)", i);
+    check(secbcls[i] >= 0 && secbcls[i] < k, "secbcls[%d] fora do intervalo [0,k)", i);
 
     nexcl[bcls[i]]++;
     *rss += d_menor;
   }
   //FIM PRIMEIRA ATRIBUICAO - LLOYD
 
-  int calculos_nao_evitados=0;
-  int nao_evitou_calculo = 0;
+  int calculos_evitados=0;
+  int evitou_calculo = 0;
 
   //loop que representa o algoritmo yin yang
   while(trocou) {
@@ -159,7 +168,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
         if(nexcl[i] > 0)
           c[j + nat * i] /= nexcl[i];
         else
-          log_warn("grupo com zero elementos.");
+          debug("grupo com zero elementos.");
 
     //calcula variacao de cada cluster
     for(i = 0; i < k; i++) {
@@ -168,27 +177,34 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
         delta = cant[j + nat * i] - c[j + nat * i];
         var[i] += delta * delta;
       }
+      check(var[i] >= 0, "var[%d] < 0", i);
     }
 
     //atualiza limites globais de todos os exemplos
     maxvar = max(var, k);
+    check(maxvar != -INFINITY, "maxvar == -INFINITY");
+
+    for(i = 0; i < k; i++)
+      check(maxvar >= var[i], "maxvar < var[%d]", i);
+
     for(i = 0; i < nex; i++) {
       ub[i] += var[bcls[i]];
       lb[i] -= maxvar;
       //lb[i] = fabs(lb[i] - maxvar);
       if(lb[i] < 0)
-        log_warn("lower bound negativo.");
+        debug("lower bound negativo.");
     }
 
     //atribui cada exemplo a um cluster
     for(i = 0; i < nex; i++) {
-      nao_evitou_calculo = 0;
-      if(lb[i] <= ub[i]) {
+      evitou_calculo = 0;
+      if(lb[i] >= ub[i]) {
         //FIXME como calcular rss?
-        nao_evitou_calculo = 1;
-        calculos_nao_evitados++;
+        evitou_calculo = 1;
+        calculos_evitados++;
       }
-      //else //para ativar o yin yang
+
+      //else //descomentar para ativar o yin yang
       {
         d_menor = seg_d_menor = INFINITY;
         antigo_melhor = bcls[i];
@@ -201,11 +217,11 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
             delta = ex[l + nat * i] - c[l + nat * j];
             d_atual += delta * delta;
           }
+          check(d_atual >= 0, "distancia negativa");
 
           if(d_atual < d_menor) {
             //a menor se torna a segunda menor
             seg_d_menor = d_menor;
-            lb[i] = d_menor;
 
             //melhor cluster se torna o segundo melhor cluster
             //na primeira troca o conteudo de secbcls podera nao fazer sentido,
@@ -220,13 +236,19 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
           else if(d_atual < seg_d_menor) {
             seg_d_menor = d_atual;
             secbcls[i] = j;
-            lb[i] = d_atual;
           }
         }
 
+        check(d_menor != seg_d_menor, "d_menor == seg_d_menor");
+        check(d_menor != INFINITY && seg_d_menor != INFINITY, "");
+
+        check(bcls[i] != secbcls[i], "bcls[%d] == secbcls[%d]", i, i);
+        check(bcls[i] >= 0 && bcls[i] < k, "bcls[%d] fora do intervalo [0,k)", i);
+        check(secbcls[i] >= 0 && secbcls[i] < k, "secbcls[%d] fora do intervalo [0,k)", i);
+
         //verifica se de fato houve troca
         if(antigo_melhor != bcls[i]) {
-          check(nao_evitou_calculo, "calculo evitado mas exemplo mudou de centro");
+          check(evitou_calculo == 0, "calculo evitado mas exemplo mudou de grupo");
           nexcl[antigo_melhor]--;
           nexcl[bcls[i]]++;
           trocou = 1;
@@ -240,14 +262,15 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   printf("iteracoes: %d\n", itr_count);
 
   int total_calculos = itr_count * nex;
-  int calculos_evitados = total_calculos - calculos_nao_evitados;
+  int calculos_realizados = total_calculos - calculos_evitados;
   printf("total de calculos: %d\n", total_calculos);
-  printf("realizados: %d\n", calculos_nao_evitados);
+  printf("realizados: %d\n", calculos_realizados);
   printf("evitados: %d\n", calculos_evitados);
   printf("taxa evitados: %.2f\n\n", (double)calculos_evitados/(double)total_calculos);
   return;
+
   error:
-  raise(SIGINT);
+  raise(SIGABRT);
 }
 
 int buscaLinear(int key, int *base, int size) {
