@@ -12,4 +12,7 @@ SOURCE = src/main.c\
 	src/kmeans.c
 
 kmeans:${SOURCE}
-	${CC} ${CFLAGS} -o $@ $^
+	${CC} ${CFLAGS} -DNDEBUG -o $@ $^
+
+dbg:${SOURCE}
+	${CC} ${CFLAGS} -o kmeans-$@ $^
