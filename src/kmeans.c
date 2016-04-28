@@ -106,7 +106,8 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       //ao encontrar as distancias menor e segunda menor, inicializa ub e lb
       if(d_atual < d_menor) {
         //a menor se torna a segunda menor
-        //FIXME se k=1, lb[i]=INFINITY
+        //FIXME se k=1, lb[i] == INFINITY
+        //ou lb[i] == INFINITY nao e problema, pois evitara todos os calculos?
         lb[i] = d_menor;
 
         //atualiza d_menor e bcls
@@ -130,14 +131,14 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
     nexcl[bcls[i]]++;
 
     //funcao objetivo atualizada
-    *rss += d_menor;
+    //*rss += d_menor;
   }
   //FIM PRIMEIRA ATRIBUICAO - LLOYD
 
   //algoritmo yinyang
   while(updated) {
     updated = false;
-    *rss = 0.0;
+    //*rss = 0.0;
     itr_count++;
 
     //salva centro como centro anterior antes de recomputar
@@ -205,7 +206,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
           updated = true;
         }
 
-        *rss += d_menor;
+        //*rss += d_menor;
       }
     }//fim atribuicao
   }//fim algoritmo
@@ -306,7 +307,6 @@ int double_comp(const void *a, const void *b) {
 }
 
 double max(double *v, size_t size) {
-
   double maior = v[0];
 
   for(size_t i = 1; i < size; i++)
