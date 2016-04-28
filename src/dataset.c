@@ -7,18 +7,18 @@ void dataset_init(Dataset *data, FILE *data_file) {
 
   VECTOR_INIT(data->ex);
 
-  int attribute_count = 0, last_attribute_count = -1;
+  size_t attribute_count = 0, last_attribute_count = 0;
 
   FILE *string_stream;
   float attribute_value;
   char linha[MAX_LINE_LENGTH];
   while (fgets(linha, MAX_LINE_LENGTH, data_file) != NULL) {
     if (linha[0] != '%') {
-      if (last_attribute_count != -1 && last_attribute_count != attribute_count) {
+      if (last_attribute_count != 0 && last_attribute_count != attribute_count) {
         log_err("datasets with missing attributes not supported.\n\
-                current attribute count: %d\n\
-                last attribute count: %d",
-                attribute_count, last_attribute_count);
+                    current attribute count: %zd\n\
+                    last attribute count: %zd",\
+                     attribute_count, last_attribute_count);
         exit(1);
       }
       attribute_count = 0;

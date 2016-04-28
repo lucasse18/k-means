@@ -1,62 +1,62 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../include/vector.h"
+#include "vector.h"
 
-inline void vector_init(Vector *vector) {
+inline void vector_init(vector *v) {
   // initialize size and capacity
-  vector->size = 0;
-  vector->capacity = VECTOR_INITIAL_CAPACITY;
+  v->size = 0;
+  v->capacity = VECTOR_INITIAL_CAPACITY;
 
   // allocate memory for vector->vec
-  vector->vec = malloc(sizeof(double) * vector->capacity);
+  v->vec = malloc(sizeof(double) * v->capacity);
 }
 
-inline void vector_resize(Vector *vector, int new_cap) {
-  vector->capacity = new_cap;
-  vector->vec = realloc(vector->vec, sizeof(double) * vector->capacity);
+inline void vector_resize(vector *v, size_t new_cap) {
+  v->capacity = new_cap;
+  v->vec = realloc(v->vec, sizeof(double) * v->capacity);
 }
 
-inline  void vector_append(Vector *vector, double value) {
+inline  void vector_append(vector *v, double value) {
   // make sure there's room to expand into
-  if (vector->size >= vector->capacity)
-    vector_resize(vector, (int) (vector->capacity * RESIZE_FACTOR));
+  if (v->size >= v->capacity)
+    vector_resize(v, (size_t)(v->capacity * RESIZE_FACTOR));
 
   // append the value and increment vector->size
-  vector->vec[vector->size++] = value;
+  v->vec[v->size++] = value;
 }
 
-inline void vector_set(Vector *vector, int index, double value) {
-  if (index >= 0 && index < vector->size)
-    vector->vec[index] = value;
+inline void vector_set(vector *v, int index, double value) {
+  if (index >= 0 && index < v->size)
+    v->vec[index] = value;
 }
 
-inline double vector_get(Vector *vector, int index) {
-  if (index >= vector->size || index < 0) {
+inline double vector_get(vector *v, int index) {
+  if (index >= v->size || index < 0) {
     printf("Index %d out of bounds.", index);
     return 0;
   }
-  return vector->vec[index];
+  return v->vec[index];
 }
 
-inline int vector_size(Vector *vector) {
-  return vector->size;
+inline size_t vector_size(vector *v) {
+  return v->size;
 }
 
-inline void vector_delete(Vector *vector, int index) {
-  if (index >= vector->size || index < 0) {
+inline void vector_delete(vector *v, int index) {
+  if (index >= v->size || index < 0) {
     printf("Index %d out of bounds.", index);
     return;
   }
 
-  //decrement vector->size
-  vector->size--;
+  //decrement v->size
+  v->size--;
 
   //check to see if there is too much space available
-  if (vector->size < (vector->capacity) / RESIZE_FACTOR)
-    vector_resize(vector, (int) (vector->capacity / RESIZE_FACTOR));//FIXME rounded up?
+  if (v->size < (v->capacity) / RESIZE_FACTOR)
+    vector_resize(v, (size_t) (v->capacity / RESIZE_FACTOR));//FIXME rounded up?
 }
 
-inline void vector_free(Vector *vector) {
-  free(vector->vec);
+inline void vector_free(vector *v) {
+  free(v->vec);
 }

@@ -11,9 +11,9 @@
 #define DATASET_FREE(dataset) dataset_free(&dataset);
 
 typedef struct dataset {
-  Vector ex;
-  int nex;
-  int nat;
+  vector ex;
+  size_t nex;
+  size_t nat;
 } Dataset;
 
 void dataset_init(Dataset *data, FILE *data_file);

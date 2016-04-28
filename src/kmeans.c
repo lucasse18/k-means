@@ -1,51 +1,61 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <signal.h>
 
 #include "kmeans.h"
 #include "dbg.h"
 
-void lloyd(double *ex, double *c, int nex, int nat, int k, int *bcls,
-           int *nexcl, double *rss) {
+__attribute__((warn_unused_result, pure))
+static int contained(int key, int *base, size_t size);
 
-  int trocou, itr_count = 0;
-  int i, j, l, novo_melhor = -1;
-  double dist_atual, dist_menor, delta;
+__attribute__((warn_unused_result, pure))
+static int double_comp(const void *a, const void *b);
 
-  //inicializa todos os exemplos no cluster -1
+__attribute__((warn_unused_result, pure))
+static double max(double *v, size_t size);
+
+__attribute__((warn_unused_result, const, always_inline))
+static inline double sqr_dist(double *restrict x, double *restrict y,
+                              size_t offx, size_t offy, size_t dim);
+
+typedef enum { false=0, true } bool;
+
+void lloyd(double *ex, double *c, size_t nex, size_t nat, size_t k,
+           size_t *bcls, size_t *nexcl, double *rss) {
+
+  bool updated;
+  size_t i, j, new_best = 0;
+  double dist_atual, dist_menor;
+
+  size_t itr_count = 0;
+
   for(i = 0; i < nex; i++)
-    bcls[i] = -1;
+    bcls[i] = 0;
 
   while(1) {
-
     *rss = 0;
-    trocou = 0;
+    updated = false;
     for(i = 0; i < k; i++) nexcl[i] = 0;
 
     //etapa 1: atribuir cada exemplo a um cluster
     for(i = 0; i < nex; i++) {
       dist_menor = INFINITY;
       for(j = 0; j < k; j++) {
-        dist_atual = 0.0;
-        for(l = 0; l < nat; l++) {
-          delta = ex[l + nat * i] - c[l + nat * j];
-          dist_atual += delta * delta;
-        }
+        dist_atual = sqr_dist(ex, c, nat * i, nat * j, nat);
         if(dist_atual < dist_menor) {
           dist_menor = dist_atual;
-          novo_melhor = j;
+          new_best = j;
         }
       }
-      if(bcls[i] != novo_melhor) {
-        trocou = 1;
-        bcls[i] = novo_melhor;
+      if(bcls[i] != new_best) {
+        updated = true;
+        bcls[i] = new_best;
       }
       nexcl[bcls[i]]++;
       *rss += dist_menor;
     }
 
-    if(!trocou) break;
+    if(!updated) break;
 
     itr_count++;
 
@@ -62,34 +72,20 @@ void lloyd(double *ex, double *c, int nex, int nat, int k, int *bcls,
         if(nexcl[i] > 0)
           c[j + nat * i] /= nexcl[i];
   }
-  printf("iteracoes: %d\n", itr_count);
-}
-
-double max(double *v, int size) {
-
-  if(size == 1)
-    return v[0];
-
-  double maior = -INFINITY;
-
-  for(int i = 0; i < size; i++)
-    if(v[i] > maior)
-      maior = v[i];
-
-  return maior;
+  printf("iteracoes: %zd\n", itr_count);
 }
 
 void yinyang(double *ex, double *c, double *cant, double *ub,
-             double *lb, double *var, int nex, int nat, int k,
-             int *bcls, int *secbcls, int *nexcl, double *rss) {
+             double *lb, double *var, size_t nex, size_t nat, size_t k,
+             size_t *bcls, size_t *nexcl, double *rss) {
 
-  int trocou = 1, itr_count=0;
-  int i, j, l, antigo_melhor;
-  double d_atual, d_menor, seg_d_menor, delta, maxvar;
+  bool updated=true, evitou_calculo;
+  size_t i, j, old_best, itr_count=0, calculos_evitados=0;
+  double d_atual, d_menor, max_var;
 
-  //inicializa vetores que identificam as medias mais proximas para cada ponto
+  //inicializa vetor que identifica a media mais proxima para cada ponto
   for(i = 0; i < nex; i++)
-    bcls[i] = secbcls[i] = -1;
+    bcls[i] = 0;
 
   //inicializa numero de elementos de cada cluster
   for(i = 0; i < k; i++)
@@ -100,57 +96,49 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
 
   //INICIO PRIMEIRA ATRIBUICAO - LLOYD
   for(i = 0; i < nex; i++) {
-
-    d_menor = seg_d_menor = INFINITY;
+    d_menor = INFINITY;
 
     //busca pelas medias mais proxima e segunda mais proxima
     for(j = 0; j < k; j++) {
-      d_atual = 0.0;
-      for(l = 0; l < nat; l++) {
-        delta = ex[l + nat * i] - c[l + nat * j];
-        d_atual += delta * delta;
-      }
+      d_atual = sqr_dist(ex, c, nat * i, nat * j, nat);
       check(d_atual >= 0, "distancia negativa");
 
       //ao encontrar as distancias menor e segunda menor, inicializa ub e lb
       if(d_atual < d_menor) {
         //a menor se torna a segunda menor
-        seg_d_menor = d_menor;
+        //FIXME se k=1, lb[i]=INFINITY
         lb[i] = d_menor;
-        secbcls[i] = bcls[i];
 
-        //nova melhor
+        //atualiza d_menor e bcls
         d_menor = d_atual;
-        ub[i] = d_atual;
         bcls[i] = j;
       }
-      else if(d_atual < seg_d_menor) {
-        seg_d_menor = d_atual;
+      else if(d_atual < lb[i]) {
+        //d_atual menor que a segunda menor, atualizar segunda menor
         lb[i] = d_atual;
-        secbcls[i] = j;
       }
     }
 
-    check(d_menor != seg_d_menor, "d_menor == seg_d_menor");
-    check(d_menor != INFINITY && seg_d_menor != INFINITY, "");
+    check(d_menor != INFINITY, "d_menor == INFINITY");
+    check(lb[i] != INFINITY, "lb[%zd] == INFINITY", i);
+    check(bcls[i] < k, "bcls[%zd] fora do intervalo [0,k)", i);
 
-    check(bcls[i] != secbcls[i], "bcls[%d] == secbcls[%d]", i, i);
-    check(bcls[i] >= 0 && bcls[i] < k, "bcls[%d] fora do intervalo [0,k)", i);
-    check(secbcls[i] >= 0 && secbcls[i] < k, "secbcls[%d] fora do intervalo [0,k)", i);
+    //d_menor definitiva do exemplo i calculada, inicializar ub
+    ub[i] = d_menor;
 
+    //numero de exemplos em bcls[i] incrementado
     nexcl[bcls[i]]++;
+
+    //funcao objetivo atualizada
     *rss += d_menor;
   }
   //FIM PRIMEIRA ATRIBUICAO - LLOYD
 
-  int calculos_evitados=0;
-  int evitou_calculo = 0;
-
-  //loop que representa o algoritmo yin yang
-  while(trocou) {
-    itr_count++;
+  //algoritmo yinyang
+  while(updated) {
+    updated = false;
     *rss = 0.0;
-    trocou = 0;
+    itr_count++;
 
     //salva centro como centro anterior antes de recomputar
     for(i = 0; i < k * nat; i++) {
@@ -158,7 +146,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       c[i] = 0.0;
     }
 
-    //recomputa cada centro
+    //recomputa cada cluster
     for(i = 0; i < nex; i++)
       for(j = 0; j < nat; j++)
         c[j + nat * bcls[i]] += ex[j + nat * i];
@@ -167,155 +155,106 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       for(j = 0; j < nat; j++)
         if(nexcl[i] > 0)
           c[j + nat * i] /= nexcl[i];
-        else
-          debug("grupo com zero elementos.");
 
     //calcula variacao de cada cluster
-    for(i = 0; i < k; i++) {
-      var[i] = 0.0;
-      for(j = 0; j < nat; j++) {
-        delta = cant[j + nat * i] - c[j + nat * i];
-        var[i] += delta * delta;
-      }
-      check(var[i] >= 0, "var[%d] < 0", i);
-    }
+    for(i = 0; i < k; i++)
+      var[i] = sqr_dist(c, cant, nat * i, nat * i, nat);
 
     //atualiza limites globais de todos os exemplos
-    maxvar = max(var, k);
-    check(maxvar != -INFINITY, "maxvar == -INFINITY");
-
-    for(i = 0; i < k; i++)
-      check(maxvar >= var[i], "maxvar < var[%d]", i);
-
+    max_var = max(var, k);
     for(i = 0; i < nex; i++) {
       ub[i] += var[bcls[i]];
-      lb[i] -= maxvar;
-      //lb[i] = fabs(lb[i] - maxvar);
-      if(lb[i] < 0)
-        debug("lower bound negativo.");
+      lb[i] -= max_var;
     }
 
     //atribui cada exemplo a um cluster
     for(i = 0; i < nex; i++) {
-      evitou_calculo = 0;
+      evitou_calculo = false;
+
       if(lb[i] >= ub[i]) {
-        //FIXME como calcular rss?
-        evitou_calculo = 1;
+        evitou_calculo = true;
         calculos_evitados++;
       }
 
       //else //descomentar para ativar o yin yang
       {
-        d_menor = seg_d_menor = INFINITY;
-        antigo_melhor = bcls[i];
+        d_menor = INFINITY;
+        old_best = bcls[i];
 
         //calcula a distancia do exemplo i aos j centros
         for(j = 0; j < k; j++) {
           //calcula a distancia do exemplo i ao centro j
-          d_atual = 0.0;
-          for(l = 0; l < nat; l++) {
-            delta = ex[l + nat * i] - c[l + nat * j];
-            d_atual += delta * delta;
-          }
+          d_atual = sqr_dist(ex, c, nat * i, nat * j, nat);
           check(d_atual >= 0, "distancia negativa");
 
           if(d_atual < d_menor) {
-            //a menor se torna a segunda menor
-            seg_d_menor = d_menor;
-
-            //melhor cluster se torna o segundo melhor cluster
-            //na primeira troca o conteudo de secbcls podera nao fazer sentido,
-            //mas sera atualizado na proxima iteracao ja que seg_d_menor
-            //ainda sera INFINITY (antigo valor de d_menor)
-            secbcls[i] = bcls[i];
-
-            //atualiza d_menor e melhor cluster
+            //atualiza d_menor e bcls
             d_menor = d_atual;
             bcls[i] = j;
           }
-          else if(d_atual < seg_d_menor) {
-            seg_d_menor = d_atual;
-            secbcls[i] = j;
-          }
         }
 
-        check(d_menor != seg_d_menor, "d_menor == seg_d_menor");
-        check(d_menor != INFINITY && seg_d_menor != INFINITY, "");
-
-        check(bcls[i] != secbcls[i], "bcls[%d] == secbcls[%d]", i, i);
-        check(bcls[i] >= 0 && bcls[i] < k, "bcls[%d] fora do intervalo [0,k)", i);
-        check(secbcls[i] >= 0 && secbcls[i] < k, "secbcls[%d] fora do intervalo [0,k)", i);
+        check(d_menor != INFINITY, "d_menor == infinito");
+        check(bcls[i] < k, "bcls[%zd] fora do intervalo [0,k)", i);
 
         //verifica se de fato houve troca
-        if(antigo_melhor != bcls[i]) {
-          check(evitou_calculo == 0, "calculo evitado mas exemplo mudou de grupo");
-          nexcl[antigo_melhor]--;
+        if(old_best != bcls[i]) {
+          check(!evitou_calculo, "calculo evitado mas exemplo mudou de grupo");
+          nexcl[old_best]--;
           nexcl[bcls[i]]++;
-          trocou = 1;
+          updated = true;
         }
 
         *rss += d_menor;
-      }//fim else
+      }
     }//fim atribuicao
-  }// fim while
+  }//fim algoritmo
 
-  printf("iteracoes: %d\n", itr_count);
-
-  int total_calculos = itr_count * nex;
-  int calculos_realizados = total_calculos - calculos_evitados;
-  printf("total de calculos: %d\n", total_calculos);
-  printf("realizados: %d\n", calculos_realizados);
-  printf("evitados: %d\n", calculos_evitados);
+  printf("iteracoes: %zd\n", itr_count);
+  size_t total_calculos = itr_count * nex;
+  size_t calculos_realizados = total_calculos - calculos_evitados;
+  printf("total de calculos: %zd\n", total_calculos);
+  printf("realizados: %zd\n", calculos_realizados);
+  printf("evitados: %zd\n", calculos_evitados);
   printf("taxa evitados: %.2f\n\n", (double)calculos_evitados/(double)total_calculos);
   return;
 
   error:
-  raise(SIGABRT);
+  abort();
 }
 
-int buscaLinear(int key, int *base, int size) {
-  int i;
-  for(i = 0; i < size; i++) {
-    if(key == base[i])
-      return 1;
-  }
-  return 0;
-}
+void inicializa_naive(double *ex, double *c, size_t nex,
+                      size_t nat, size_t k, int *gen) {
+  int rnd;
 
-void inicializa_naive(double *ex, double *c, int nex,
-                      int nat, int k, int *gen) {
-  int i, j,rnd;
-
-  for(i = 0; i < k; i++) {
+  for(size_t i = 0; i < k; i++) {
     gen[i] = 0;
 
     do {
-      rnd = (int) (lrand48() % nex);//FIXME long to int overflow
-    } while(buscaLinear(rnd, gen, i) != 0);
+      //FIXME uniformidade perdida com overflow long -> int
+      rnd = (int) (lrand48() % nex);
+    } while(contained(rnd, gen, i) != 0);
 
     gen[i] = rnd;
 
-    for(j = 0; j < nat; j++)
+    for(size_t j = 0; j < nat; j++)
       c[j + i * nat] = ex[j + rnd * nat];
   }
 }
 
-int compara_double(const void *a, const void *b) {
-  if((*(double *) a) > (*(double *) b)) return 1;
-  if((*(double *) a) < (*(double *) b)) return -1;
-  return 0;
-}
-
-void inicializa_PP(double *ex, double *c, int nex,
-                   int nat, int k, int *gen, double *dist) {
-  int i, j, l, qtd_ja_escolhidos = 0;
-  double soma, delta, dist_atual, rnd;
+//TODO
+void inicializa_PP(double *ex, double *c, size_t nex,
+                   size_t nat, size_t k, int *gen, double *dist) {
+  size_t i, j, qtd_ja_escolhidos = 0;
+  double soma, d_atual, rnd;
 
   //escolhe um centro inicial de maneira aleatoria uniforme
-  gen[0] = (int) (lrand48() % nex);//FIXME long to int overflow
+  //FIXME uniformidade perdida com overflow long -> int
+  gen[0] = (int) (lrand48() % nex);
   qtd_ja_escolhidos++;
+
   for(i = 0; i < nat; i++)
-      c[i] = ex[i + gen[0] * nat];
+    c[i] = ex[i + gen[0] * nat];
 
   //escolhe os demais centros de acordo com a distancia
   //em relacao aos ja escolhidos
@@ -323,21 +262,17 @@ void inicializa_PP(double *ex, double *c, int nex,
     soma = 0;
     for(i = 0; i < nex; i++) {
       dist[i] = INFINITY;
-      for(l = 0; l < qtd_ja_escolhidos; l++) {
-        dist_atual = 0;
-        for(j = 0; j < nat; j++) {
-          delta = ex[l + nat * i] - c[l + nat * j];;
-          dist_atual += delta * delta;
-        }
+      for(j = 0; j < qtd_ja_escolhidos; j++) {
+        d_atual = sqr_dist(ex, c, nat * i, nat * j, nat);
 
-        if(dist_atual < dist[i])
-          dist[i] = dist_atual;
-
+        if(d_atual < dist[i])
+          dist[i] = d_atual;
       }
       soma += dist[i];
     }
     dist[i] /= soma;
-    qsort(dist, (size_t)nex, sizeof(double), compara_double);
+
+    qsort(dist, nex, sizeof(double), double_comp);
 
     i = 0;
     rnd = drand48();
@@ -349,8 +284,46 @@ void inicializa_PP(double *ex, double *c, int nex,
     //iteracao. se o centro nao for validado qtd_ja_escolhidos nao sera
     //incrementada e o loop sera realizado mais uma vez *HACK*
     //FIXME gerar outro numero aleatorio ao inves de recalcular distancias
-    if(!buscaLinear(i, gen, qtd_ja_escolhidos))
-      gen[qtd_ja_escolhidos++] = i;
-
+    if(!contained((int) i, gen, qtd_ja_escolhidos))
+      gen[qtd_ja_escolhidos++] = (int)i;
   }
+}
+
+//helper functions
+
+int contained(int key, int *base, size_t size) {
+  for(size_t i = 0; i < size; i++) {
+    if(key == base[i])
+      return 1;
+  }
+  return 0;
+}
+
+int double_comp(const void *a, const void *b) {
+  if((*(double *) a) > (*(double *) b)) return 1;
+  if((*(double *) a) < (*(double *) b)) return -1;
+  return 0;
+}
+
+double max(double *v, size_t size) {
+
+  double maior = v[0];
+
+  for(size_t i = 1; i < size; i++)
+    if(v[i] > maior)
+      maior = v[i];
+
+  return maior;
+}
+
+double sqr_dist(double *restrict x, double *restrict y,
+                size_t offx, size_t offy, size_t dim) {
+  double d = 0.0, dif;
+
+  for(size_t i = 0; i < dim; i++) {
+    dif = x[offx + i] - y[offy + i];
+    d += dif*dif;
+  }
+
+  return d;
 }

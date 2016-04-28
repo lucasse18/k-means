@@ -15,16 +15,15 @@ int main(int argc, char *argv[]) {
 
   //geral
   double *centros = NULL;
-  int *bcls       = NULL;
-  int *nexcl      = NULL;
+  size_t *bcls    = NULL;
+  size_t *nexcl   = NULL;
   int *gerados    = NULL;
-  double rss = 0.0;
+  double rss      = 0.0;
   //yin yang
   double *cant    = NULL;
   double *ub      = NULL;
   double *lb      = NULL;
   double *var     = NULL;
-  int *secbcls    = NULL;
   //kmeanspp
   double *dist    = NULL;
 
@@ -46,7 +45,7 @@ int main(int argc, char *argv[]) {
   int opt_index = 0;
   int c;
 
-  while((c = getopt_long (argc, argv, "ho:a:k:s:n", long_opts, &opt_index)) != -1) {
+  while((c = getopt_long (argc, argv, "ho:a:k:s:", long_opts, &opt_index)) != -1) {
     switch(c) {
     case 0:
       break;
@@ -71,7 +70,7 @@ int main(int argc, char *argv[]) {
       check(k > 0, "the number of clusters to create must be greater than zero.");
       break;
 
-      case 's':
+    case 's':
       user_seed = atoi(optarg);
       break;
 
@@ -85,23 +84,21 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if(argv[optind] == NULL) {
-    fprintf(stderr, "kmeans: no dataset specified.\n");
-    goto error;
-  }
+  check(argv[optind], "kmeans: no dataset specified.");
 
   char *final_filename = malloc(sizeof(char) * (2 * strlen(argv[optind])) + 16);
   strcpy(final_filename, "datasets/");
   strcat(final_filename, argv[optind]);
   strcat(final_filename, "/");
   strcat(final_filename, argv[optind]);
-  strcat(final_filename, ".arff");
+  strcat(final_filename, ".dat");
   datafile = fopen(final_filename, "r");
   check(datafile != NULL, "could not open file %s for reading.", final_filename);
   free(final_filename);
 
   if(user_seed != -1) {
     srand48(user_seed);
+    //104
     log_info("seed: %d", user_seed);
   }
   else {
@@ -114,9 +111,10 @@ int main(int argc, char *argv[]) {
   DATASET_INIT(data, datafile);
   fclose(datafile);
 
+  //FIXME eh necessario tratamento especial para k > data.nex?
   //se usuario nao definiu k, utilizar o criterio de oliveira
-  //FIXME o que fazer quando k > nex?
   if(k == 0) {
+    log_warn("number of clusters not defined, using default value");
     if(data.nex <= 100)
       k = (int) sqrt(data.nex);
     else
@@ -125,11 +123,11 @@ int main(int argc, char *argv[]) {
 
   centros = malloc(k * data.nat * sizeof(double));
   check_mem(centros);
-  bcls = malloc(data.nex * sizeof(int));
+  bcls = malloc(data.nex * sizeof(size_t));
   check_mem(bcls);
-  nexcl = malloc(k * sizeof(int));
+  nexcl = malloc(k * sizeof(size_t));
   check_mem(nexcl);
-  gerados = malloc(k * sizeof(int));
+  gerados = malloc(k * sizeof(size_t));
   check_mem(gerados);
 
   switch(alg) {
@@ -139,7 +137,7 @@ int main(int argc, char *argv[]) {
       lloyd(data.ex.vec, centros, data.nex, data.nat, k, bcls, nexcl, &rss);
       break;
 
-    //TODO algoritmo yinyang em progresso(WIP)
+    //TODO algoritmo yinyang
     case 2:
       cant = malloc(k * data.nat * sizeof(double));
       check_mem(cant);
@@ -149,29 +147,26 @@ int main(int argc, char *argv[]) {
       check_mem(lb);
       var = malloc(k * sizeof(double));
       check_mem(var);
-      secbcls = malloc(data.nex * sizeof(int));
-      check_mem(secbcls);
 
       printf("*YINYANG*\n");
       inicializa_naive(data.ex.vec, centros, data.nex, data.nat, k, gerados);
-      yinyang(data.ex.vec, centros, cant, ub, lb, var, data.nex,
-              data.nat, k, bcls, secbcls, nexcl, &rss);
+      yinyang(data.ex.vec, centros, cant, ub, lb, var, data.nex, data.nat, k,
+              bcls, nexcl, &rss);
 
       free(cant);
       free(ub);
       free(lb);
       free(var);
-      free(secbcls);
       free(gerados);
       break;
 
-    //TODO algoritmo kmeans++ em progresso(WIP)
+    //TODO algoritmo kmeanspp
     case 3:
       dist = malloc(data.nex * sizeof(double));
       check_mem(dist);
 
-      inicializa_PP(data.ex.vec, centros, data.nex, data.nat, k, gerados, dist);
-      lloyd(data.ex.vec, centros, data.nex, data.nat, k, bcls, nexcl, &rss);
+      inicializa_PP(data.ex.vec, centros, data.nex, data.nat, (size_t)k, gerados, dist);
+      lloyd(data.ex.vec, centros, data.nex, data.nat, (size_t)k, bcls, nexcl, &rss);
 
       free(dist);
       break;
@@ -181,7 +176,7 @@ int main(int argc, char *argv[]) {
   }
 
   for(int i = 0; i < k; i++)
-    printf("exemplos no cluster [%d]: %d\n", i, nexcl[i]);
+    printf("exemplos no cluster [%d]: %zd\n", i, nexcl[i]);
 
   DATASET_FREE(data);
 
@@ -204,7 +199,6 @@ int main(int argc, char *argv[]) {
   if(ub       != NULL)   free(ub);
   if(lb       != NULL)   free(lb);
   if(var      != NULL)   free(var);
-  if(secbcls  != NULL)   free(secbcls);
   if(dist     != NULL)   free(dist);
   exit(1);
 }
@@ -212,9 +206,9 @@ int main(int argc, char *argv[]) {
 void print_usage() {
   printf("Usage: kmeans [options] file...\n");
   printf("Options:\n");
-  printf("  -a, --algorithm <ll,yy>  Algorithm to be used for clustering.\n");
-  printf("  -k, --clusters <arg>     Number of clusters to create.\n");
-  printf("  -s, --seed <arg>         Seed used by the initialization algorithm.\n");
+  printf("  -a, --algorithm <ll,yy,pp> Algorithm to be used for clustering.\n");
+  printf("  -k, --clusters <arg>       Number of clusters to create.\n");
+  printf("  -s, --seed <arg>           Seed used by the initialization algorithm.\n");
 }
 
 int get_alg_code(const char *optarg) {
