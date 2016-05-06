@@ -86,15 +86,18 @@ int main(int argc, char *argv[]) {
 
   check(argv[optind], "kmeans: no dataset specified.");
 
-  char *final_filename = malloc(sizeof(char) * (2 * strlen(argv[optind])) + 16);
-  strcpy(final_filename, "datasets/");
-  strcat(final_filename, argv[optind]);
-  strcat(final_filename, "/");
-  strcat(final_filename, argv[optind]);
-  strcat(final_filename, ".dat");
-  datafile = fopen(final_filename, "r");
-  check(datafile != NULL, "could not open file %s for reading.", final_filename);
-  free(final_filename);
+  /* char *final_filename = malloc(sizeof(char) * (2 * strlen(argv[optind])) + 16); */
+  /* strcpy(final_filename, "datasets/"); */
+  /* strcat(final_filename, argv[optind]); */
+  /* strcat(final_filename, "/"); */
+  /* strcat(final_filename, argv[optind]); */
+  /* strcat(final_filename, ".dat"); */
+  /* datafile = fopen(final_filename, "r"); */
+  /* check(datafile != NULL, "could not open file %s for reading.", final_filename); */
+  /* free(final_filename); */
+
+  datafile = fopen(argv[optind], "r");
+  check(datafile != NULL, "could not open file %s for reading.", argv[optind]);
 
   if(user_seed != -1) {
     srand48(user_seed);
@@ -177,6 +180,11 @@ int main(int argc, char *argv[]) {
 
   for(int i = 0; i < k; i++)
     printf("exemplos no cluster [%d]: %zd\n", i, nexcl[i]);
+
+  for (size_t i = 0; i < data.nex; i++) {
+    printf("%zd ",bcls[i]);
+  }
+  printf("\n");
 
   DATASET_FREE(data);
 

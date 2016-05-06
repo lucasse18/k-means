@@ -79,7 +79,8 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
              double *lb, double *var, size_t nex, size_t nat, size_t k,
              size_t *bcls, size_t *nexcl, double *rss) {
 
-  bool updated=true, evitou_calculo;
+  bool updated=true;
+  //bool evitou_calculo;
   size_t i, j, old_best, itr_count=0, calculos_evitados=0;
   double d_atual, d_menor, max_var;
 
@@ -170,14 +171,14 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
 
     //atribui cada exemplo a um cluster
     for(i = 0; i < nex; i++) {
-      evitou_calculo = false;
+      //evitou_calculo = false;
 
       if(lb[i] >= ub[i]) {
-        evitou_calculo = true;
+        //evitou_calculo = true;
         calculos_evitados++;
       }
 
-      //else //descomentar para ativar o yin yang
+      else //descomentar para ativar o yin yang
       {
         d_menor = INFINITY;
         old_best = bcls[i];
@@ -200,7 +201,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
 
         //verifica se de fato houve troca
         if(old_best != bcls[i]) {
-          check(!evitou_calculo, "calculo evitado mas exemplo mudou de grupo");
+          //check(!evitou_calculo, "calculo evitado mas exemplo mudou de grupo");
           nexcl[old_best]--;
           nexcl[bcls[i]]++;
           updated = true;
@@ -325,5 +326,5 @@ double sqr_dist(double *restrict x, double *restrict y,
     d += dif*dif;
   }
 
-  return d;
+  return sqrt(d);
 }
