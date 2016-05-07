@@ -8,7 +8,7 @@ do
     r=$RANDOM
     ll=`../kmeans ../datasets/$1/$1.dat -k 3 -s $r | tail -1`
     yy=`../kmeans ../datasets/$1/$1.dat -k 3 -s $r -a yy | tail -1`
-    if [[ "ll" != "yy" ]];
+    if [[ $ll != $yy ]];
     then echo "DIFERENTE em $i, seed: $r"
     fi
 done
