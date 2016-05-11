@@ -1,0 +1,49 @@
+#! /bin/sh
+
+# runs lloyd, yy and yy with a lb multiplier on the specified dataset
+
+# $1 - dataset
+# $2 - #clusters
+# $3 - seed
+# $4 - lb_mult
+
+function print_usage() {
+    echo "usage: run-all <dataset> <#clusters> <seed> <lb_mult>"
+}
+
+if [[ "$1" == "h" || "$1" == "help" || "$1" == "-h" || "$1" == "--help" ]]
+then
+    print_usage
+    exit
+fi
+
+if [[ -z $1 ]]
+then
+    echo "no dataset specified, stopping"
+    print_usage
+    exit
+fi
+
+K="-k $2"
+if [[ -z $2 ]]
+then
+    K=""
+fi
+
+S="-s $3"
+if [[ -z $3 ]]
+then
+    S="-s $RANDOM"
+fi
+
+# rodar lloyd
+../kmeans ../datasets/$1/$1.dat $K $S
+
+# rodar yy sem multiplicador
+../kmeans ../datasets/$1/$1.dat $K $S -a yy
+
+if [[ -n $4 ]]
+then
+    # rodar yy com multiplicador
+    ../kmeans ../datasets/$1/$1.dat $K $S -a yy -m $4
+fi    
