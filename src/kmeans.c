@@ -20,6 +20,8 @@ static inline double sqr_dist(double *restrict x, double *restrict y,
 
 typedef enum { false=0, true } bool;
 
+extern int optv;
+
 void lloyd(double *ex, double *c, size_t nex, size_t nat, size_t k,
            size_t *bcls, size_t *nexcl, double *rss) {
 
@@ -72,15 +74,14 @@ void lloyd(double *ex, double *c, size_t nex, size_t nat, size_t k,
         if(nexcl[i] > 0)
           c[j + nat * i] /= nexcl[i];
   }
-  printf("iteracoes: %zd\n", itr_count);
+  printf_v1("iteracoes: %zd\n", itr_count);
 }
 
 void yinyang(double *ex, double *c, double *cant, double *ub,
              double *lb, double *var, size_t nex, size_t nat, size_t k,
-             size_t *bcls, size_t *nexcl, double *rss) {
+             size_t *bcls, size_t *nexcl, double *rss, double lb_mult) {
 
   bool updated=true;
-  //bool evitou_calculo;
   size_t i, j, old_best, itr_count=0, calculos_evitados=0;
   double d_atual, d_menor, max_var;
 
@@ -128,6 +129,8 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
     //d_menor definitiva do exemplo i calculada, inicializar ub
     ub[i] = d_menor;
 
+    lb[i] *= lb_mult;
+
     //numero de exemplos em bcls[i] incrementado
     nexcl[bcls[i]]++;
 
@@ -171,15 +174,10 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
 
     //atribui cada exemplo a um cluster
     for(i = 0; i < nex; i++) {
-      //evitou_calculo = false;
-
-      if(lb[i] >= ub[i]) {
-        //evitou_calculo = true;
+      if(lb[i] >= ub[i])
         calculos_evitados++;
-      }
 
-      else //descomentar para ativar o yin yang
-      {
+      else {
         d_menor = INFINITY;
         old_best = bcls[i];
 
@@ -212,13 +210,16 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
     }//fim atribuicao
   }//fim algoritmo
 
-  printf("iteracoes: %zd\n", itr_count);
+  printf_v1("iteracoes: %zd\n", itr_count);
   size_t total_calculos = itr_count * nex;
   size_t calculos_realizados = total_calculos - calculos_evitados;
-  printf("total de calculos: %zd\n", total_calculos);
-  printf("realizados: %zd\n", calculos_realizados);
-  printf("evitados: %zd\n", calculos_evitados);
-  printf("taxa evitados: %.2f\n\n", (double)calculos_evitados/(double)total_calculos);
+  printf_v1("total de calculos: %zd\n", total_calculos);
+  printf_v1("realizados: ");
+  printf("%zd\n", calculos_realizados);
+  printf_v1("evitados: ");
+  printf_v1("%zd\n", calculos_evitados);
+  printf_v1("taxa evitados: %.2f\n", (double)calculos_evitados/(double)total_calculos);
+
   return;
 
   error:
@@ -244,7 +245,7 @@ void inicializa_naive(double *ex, double *c, size_t nex,
   }
 }
 
-//TODO
+//TODO kmeans++
 void inicializa_PP(double *ex, double *c, size_t nex,
                    size_t nat, size_t k, int *gen, double *dist) {
   size_t i, j, qtd_ja_escolhidos = 0;

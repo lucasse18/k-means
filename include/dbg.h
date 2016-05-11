@@ -28,5 +28,9 @@
 
 #define check_debug(A, M, ...) if(!(A)) { debug(M, ##__VA_ARGS__); errno=0; goto error; }
 
+#define log_info_v1(M, ...) if((optv) >= 1) { log_info(M, ##__VA_ARGS__); }
+
+#define printf_v1(M, ...) if((optv) >= 1) { printf(M, ##__VA_ARGS__); }
+
 
 #endif //DBG_H
