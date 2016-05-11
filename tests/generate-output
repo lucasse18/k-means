@@ -43,6 +43,11 @@ then
     K=""
 fi
 
+if [[ ! -d out ]]
+then
+    mkdir out
+fi
+
 if [[ -f out/yy ]]
 then
     rm out/yy
