@@ -43,14 +43,13 @@ then
     K=""
 fi
 
-if [[ -f out/ll ]]
-then
-    rm out/ll
-fi
-
 if [[ -f out/yy ]]
 then
     rm out/yy
+fi
+
+if [[ -f out/yy_mult ]]
+then
     rm out/yy_mult
 fi
 
