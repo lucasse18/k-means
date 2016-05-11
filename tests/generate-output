@@ -64,5 +64,3 @@ do
     ../kmeans ../datasets/$1/$1.dat $K -s $r -q -a yy >> out/yy
     ../kmeans ../datasets/$1/$1.dat $K -s $r -q -a yy -m $4 >> out/yy_mult
 done
-
-echo $K
