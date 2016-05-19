@@ -214,11 +214,11 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   size_t total_calculos = itr_count * nex;
   size_t calculos_realizados = total_calculos - calculos_evitados;
   printf_v1("total de calculos: %zd\n", total_calculos);
-  printf_v1("realizados: ");
-  printf("%zd\n", calculos_realizados);
+  printf_v1("realizados: %zd\n", calculos_realizados);
   printf_v1("evitados: ");
   printf_v1("%zd\n", calculos_evitados);
-  printf_v1("taxa evitados: %.2f\n", (double)calculos_evitados/(double)total_calculos);
+  printf_v1("taxa evitados: ");
+  printf("%.4f\n", (double)calculos_evitados/(double)total_calculos);
 
   return;
 
