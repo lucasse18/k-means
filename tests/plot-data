@@ -1,0 +1,38 @@
+dataset=$1
+if [[ -z $dataset ]]
+then
+  echo "missing dataset, stopping."
+  exit
+fi
+
+gnuplot<<EOF
+set datafile separator ","
+set title "$dataset"
+set term "png"
+
+stats "datasets/$dataset/processed.dat" using 1 name "gain"
+stats "datasets/$dataset/processed.dat" using 2 name "error"
+stats "datasets/$dataset/processed.dat" using 3 name "mult"
+
+# primeiro grafico, erros x mult
+set output "$dataset-error_x_mult.png"
+set xlabel "multiplicador do lower bound inicial"
+set ylabel "numero de erros produzidos"
+
+plot "datasets/$dataset/processed.dat" using 3:2 t "dados", error_mean t "media erros"
+
+# segundo grafico, ganho x mult
+set output "$dataset-gain_x_mult.png"
+set xlabel "multiplicador do lower bound inicial"
+set ylabel "calculos evitados (%)"
+
+plot "datasets/$dataset/processed.dat" using 3:1 t "dados", gain_mean t "media ganho"
+
+# terceiro grafico, erros x ganho x mult
+set output "$dataset-error_x_gain_x_mult.png"
+set xlabel "multiplicador do lower bound inicial"
+set ylabel "numero de erros produzidos"
+set zlabel "calculos evitados (%)"
+
+splot "datasets/$dataset/processed.dat" using 3:1:2 t "dados", gain_mean t "media ganho", error_mean t "media erros"
+EOF
