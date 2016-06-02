@@ -5,34 +5,41 @@ then
   exit
 fi
 
+filename=$2
+if [[ -z $filename ]]
+then
+  filename="processed.dat"
+fi
+
+
 gnuplot<<EOF
 set datafile separator ","
-set title "$dataset"
+set title "$dataset-$filename"
 set term "png"
 
-stats "datasets/$dataset/processed.dat" using 1 name "gain"
-stats "datasets/$dataset/processed.dat" using 2 name "error"
-stats "datasets/$dataset/processed.dat" using 3 name "mult"
+stats "datasets/$dataset/$filename" using 1 name "gain"
+stats "datasets/$dataset/$filename" using 2 name "error"
+stats "datasets/$dataset/$filename" using 3 name "mult"
 
 # primeiro grafico, erros x mult
-set output "$dataset-error_x_mult.png"
-set xlabel "multiplicador do lower bound inicial"
-set ylabel "numero de erros produzidos"
+set output "$dataset-$filename-error_x_mult.png"
+set xlabel "multiplicador"
+set ylabel "erros produzidos"
 
-plot "datasets/$dataset/processed.dat" using 3:2 t "dados", error_mean t "media erros"
+plot "datasets/$dataset/$filename" using 3:2 t "dados", error_mean t "media erros"
 
 # segundo grafico, ganho x mult
-set output "$dataset-gain_x_mult.png"
-set xlabel "multiplicador do lower bound inicial"
+set output "$dataset-$filename-gain_x_mult.png"
+set xlabel "multiplicador"
 set ylabel "calculos evitados (%)"
 
-plot "datasets/$dataset/processed.dat" using 3:1 t "dados", gain_mean t "media ganho"
+plot "datasets/$dataset/$filename" using 3:1 t "dados", gain_mean t "media ganho"
 
 # terceiro grafico, erros x ganho x mult
-set output "$dataset-error_x_gain_x_mult.png"
-set xlabel "multiplicador do lower bound inicial"
-set ylabel "numero de erros produzidos"
+set output "$dataset-$filename-error_x_gain_x_mult.png"
+set xlabel "multiplicador"
+set ylabel "erros produzidos"
 set zlabel "calculos evitados (%)"
 
-splot "datasets/$dataset/processed.dat" using 3:1:2 t "dados", gain_mean t "media ganho", error_mean t "media erros"
+splot "datasets/$dataset/$filename" using 3:1:2 t "dados", gain_mean t "media ganho", error_mean t "media erros"
 EOF

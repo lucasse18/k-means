@@ -21,6 +21,7 @@ static inline double sqr_dist(double *restrict x, double *restrict y,
 typedef enum { false=0, true } bool;
 
 extern int optv;
+extern int optc;
 
 void lloyd(double *ex, double *c, size_t nex, size_t nat, size_t k,
            size_t *bcls, size_t *nexcl, double *rss) {
@@ -83,7 +84,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
 
   bool updated=true;
   size_t i, j, old_best, itr_count=0, calculos_evitados=0;
-  double d_atual, d_menor, max_var;
+  double d_atual, d_menor, max_var, d_terceira;
 
   //inicializa vetor que identifica a media mais proxima para cada ponto
   for(i = 0; i < nex; i++)
@@ -99,6 +100,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   //INICIO PRIMEIRA ATRIBUICAO - LLOYD
   for(i = 0; i < nex; i++) {
     d_menor = INFINITY;
+    d_terceira = INFINITY;
 
     //busca pelas medias mais proxima e segunda mais proxima
     for(j = 0; j < k; j++) {
@@ -110,6 +112,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
         //a menor se torna a segunda menor
         //FIXME se k=1, lb[i] == INFINITY
         //ou lb[i] == INFINITY nao e problema, pois evitara todos os calculos?
+        d_terceira = lb[i];
         lb[i] = d_menor;
 
         //atualiza d_menor e bcls
@@ -118,7 +121,11 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       }
       else if(d_atual < lb[i]) {
         //d_atual menor que a segunda menor, atualizar segunda menor
+        d_terceira = lb[i];
         lb[i] = d_atual;
+      }
+      else if(k > 2 && d_atual < d_terceira) {
+        d_terceira = d_atual;
       }
     }
 
@@ -129,7 +136,15 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
     //d_menor definitiva do exemplo i calculada, inicializar ub
     ub[i] = d_menor;
 
-    lb[i] *= lb_mult;
+    double diferenca = d_terceira - lb[i];
+    printf_v1("diferenca: %.2f\n", diferenca);
+
+    if(optc) {
+      if(diferenca > 1.0)
+        lb[i] *= lb_mult;
+    }
+    else
+      lb[i] *= lb_mult;
 
     //numero de exemplos em bcls[i] incrementado
     nexcl[bcls[i]]++;
