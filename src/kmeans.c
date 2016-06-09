@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <float.h>
 
 #include "kmeans.h"
 #include "dbg.h"
@@ -21,11 +22,9 @@ static inline double sqr_dist(double *restrict x, double *restrict y,
 typedef enum { false=0, true } bool;
 
 extern int optv;
-extern int optc;
 
 void lloyd(double *ex, double *c, size_t nex, size_t nat, size_t k,
            size_t *bcls, size_t *nexcl, double *rss) {
-
   bool updated;
   size_t i, j, new_best = 0;
   double dist_atual, dist_menor;
@@ -82,9 +81,8 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
              double *lb, double *var, size_t nex, size_t nat, size_t k,
              size_t *bcls, size_t *nexcl, double *rss, double lb_mult) {
 
-  bool updated=true;
-  size_t i, j, old_best, itr_count=0, calculos_evitados=0;
-  double d_atual, d_menor, max_var, d_terceira;
+  size_t i, j, old_best, itr_count=0, calculos_evitados=0, swaps=1;
+  double d_atual, d_menor, max_var;
 
   //inicializa vetor que identifica a media mais proxima para cada ponto
   for(i = 0; i < nex; i++)
@@ -95,24 +93,22 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
     nexcl[i] = 0;
 
   //inicializa a funcao objetivo
-  *rss = 0;
+  //*rss = 0;
 
   //INICIO PRIMEIRA ATRIBUICAO - LLOYD
   for(i = 0; i < nex; i++) {
     d_menor = INFINITY;
-    d_terceira = INFINITY;
 
     //busca pelas medias mais proxima e segunda mais proxima
     for(j = 0; j < k; j++) {
       d_atual = sqr_dist(ex, c, nat * i, nat * j, nat);
-      check(d_atual >= 0, "distancia negativa");
+      check_if_debug(d_atual >= 0, "distancia negativa");
 
       //ao encontrar as distancias menor e segunda menor, inicializa ub e lb
       if(d_atual < d_menor) {
         //a menor se torna a segunda menor
         //FIXME se k=1, lb[i] == INFINITY
         //ou lb[i] == INFINITY nao e problema, pois evitara todos os calculos?
-        d_terceira = lb[i];
         lb[i] = d_menor;
 
         //atualiza d_menor e bcls
@@ -121,30 +117,18 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       }
       else if(d_atual < lb[i]) {
         //d_atual menor que a segunda menor, atualizar segunda menor
-        d_terceira = lb[i];
         lb[i] = d_atual;
-      }
-      else if(k > 2 && d_atual < d_terceira) {
-        d_terceira = d_atual;
       }
     }
 
-    check(d_menor != INFINITY, "d_menor == INFINITY");
-    check(lb[i] != INFINITY, "lb[%zd] == INFINITY", i);
-    check(bcls[i] < k, "bcls[%zd] fora do intervalo [0,k)", i);
+    check_if_debug(d_menor != INFINITY, "d_menor == INFINITY");
+    check_if_debug(lb[i] != INFINITY, "lb[%zd] == INFINITY", i);
+    check_if_debug(bcls[i] < k, "bcls[%zd] fora do intervalo [0,k)", i);
 
     //d_menor definitiva do exemplo i calculada, inicializar ub
     ub[i] = d_menor;
 
-    double diferenca = d_terceira - lb[i];
-    printf_v1("diferenca: %.2f\n", diferenca);
-
-    if(optc) {
-      if(diferenca > 1.0)
-        lb[i] *= lb_mult;
-    }
-    else
-      lb[i] *= lb_mult;
+    lb[i] *= lb_mult;
 
     //numero de exemplos em bcls[i] incrementado
     nexcl[bcls[i]]++;
@@ -155,8 +139,8 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   //FIM PRIMEIRA ATRIBUICAO - LLOYD
 
   //algoritmo yinyang
-  while(updated) {
-    updated = false;
+  while(swaps) {
+    swaps = 0;
     //*rss = 0.0;
     itr_count++;
 
@@ -189,6 +173,8 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
 
     //atribui cada exemplo a um cluster
     for(i = 0; i < nex; i++) {
+
+      //lemma 1 yin yang
       if(lb[i] >= ub[i])
         calculos_evitados++;
 
@@ -200,7 +186,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
         for(j = 0; j < k; j++) {
           //calcula a distancia do exemplo i ao centro j
           d_atual = sqr_dist(ex, c, nat * i, nat * j, nat);
-          check(d_atual >= 0, "distancia negativa");
+          check_if_debug(d_atual >= 0, "distancia negativa");
 
           if(d_atual < d_menor) {
             //atualiza d_menor e bcls
@@ -209,23 +195,28 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
           }
         }
 
-        check(d_menor != INFINITY, "d_menor == infinito");
-        check(bcls[i] < k, "bcls[%zd] fora do intervalo [0,k)", i);
+        check_if_debug(d_menor != INFINITY, "d_menor == infinito");
+        check_if_debug(bcls[i] < k, "bcls[%zd] fora do intervalo [0,k)", i);
 
         //verifica se de fato houve troca
         if(old_best != bcls[i]) {
-          //check(!evitou_calculo, "calculo evitado mas exemplo mudou de grupo");
           nexcl[old_best]--;
           nexcl[bcls[i]]++;
-          updated = true;
+          swaps++;
         }
-
         //*rss += d_menor;
       }
     }//fim atribuicao
+
+    //se mult for maior que 1.0 e houveram poucas trocas finalizar com mult 1.0
+    if((fabs(lb_mult - 1.0) > FLT_EPSILON) && (swaps < (size_t)(0.05 * nex))) {
+      debug("correcao iniciada, iteracoes: %zd", itr_count);
+      yinyang(ex,c,cant,ub,lb,var,nex,nat,k,bcls,nexcl,rss,1.0);
+      return;
+    }
   }//fim algoritmo
 
-  printf_v1("iteracoes: %zd\n", itr_count);
+  debug("iteracoes: %zd", itr_count);
   size_t total_calculos = itr_count * nex;
   size_t calculos_realizados = total_calculos - calculos_evitados;
   printf_v1("total de calculos: %zd\n", total_calculos);
@@ -233,7 +224,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   printf_v1("evitados: ");
   printf_v1("%zd\n", calculos_evitados);
   printf_v1("taxa evitados: ");
-  printf("%.4f\n", (double)calculos_evitados/(double)total_calculos);
+  printf_v1("%.4f\n", (double)calculos_evitados/(double)total_calculos);
 
   return;
 
@@ -241,8 +232,8 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   abort();
 }
 
-void inicializa_naive(double *ex, double *c, size_t nex,
-                      size_t nat, size_t k, int *gen) {
+void naive_init(double *ex, double *c, size_t nex, size_t nat, size_t k, int *gen) {
+
   int rnd;
 
   for(size_t i = 0; i < k; i++) {

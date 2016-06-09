@@ -2,20 +2,36 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <math.h>
+#include <time.h>
 
 #include "dbg.h"
 #include "dataset.h"
 #include "kmeans.h"
 
+typedef struct timespec timespec;
+
 int optv = 1;
-int optc = 0;
 
 void print_usage();
 int get_alg_code(const char *optarg);
 unsigned long rdtsc();
 
-int main(int argc, char *argv[]) {
+struct timespec timer_start(){
+  struct timespec start;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+  return start;
+}
 
+//returns time in miliseconds
+double timer_end(struct timespec start){
+  struct timespec end;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+  double sec = 1000.0 * (end.tv_sec - start.tv_sec);
+  double nsec = (end.tv_nsec - start.tv_nsec) / 1000000.0;
+  return sec + nsec;
+}
+
+int main(int argc, char *argv[]) {
   //geral
   double *centros = NULL;
   size_t *bcls    = NULL;
@@ -45,7 +61,6 @@ int main(int argc, char *argv[]) {
     {"clusters",   required_argument, 0, 'k'},//default criterio de oliveira
     {"seed",       required_argument, 0, 's'},//default time(NULL)
     {"mult",       required_argument, 0, 'm'},//default 1.0
-    {"cons",       no_argument,       0, 'c'},
     {"quiet",      no_argument,       0, 'q'},
     {"verbose",    no_argument,       0, 'v'},
     {0,           0,                  0,   0}
@@ -54,7 +69,7 @@ int main(int argc, char *argv[]) {
   int c;
   int opt_index = 0;
 
-  while((c = getopt_long (argc, argv, "ho:a:k:s:m:cqv", long_opts, &opt_index)) != -1) {
+  while((c = getopt_long (argc, argv, "ho:a:k:s:m:qv", long_opts, &opt_index)) != -1) {
     switch(c) {
     case 0:
       break;
@@ -75,19 +90,15 @@ int main(int argc, char *argv[]) {
       break;
 
     case 'k':
-      k = (size_t) atoi(optarg);
+      k = (size_t) atol(optarg);
       break;
 
     case 's':
-      user_seed = atoi(optarg);
+      user_seed = atol(optarg);
       break;
 
     case 'm':
       lb_mult = atof(optarg);
-      break;
-
-    case 'c':
-      optc = 1;
       break;
 
     case 'q':
@@ -109,20 +120,6 @@ int main(int argc, char *argv[]) {
   }
 
   check(argv[optind], "kmeans: no dataset specified, stopping.");
-
-  /*
-  //HACK hardcoded dataset directory structure
-  char *final_filename = malloc(sizeof(char) * (2 * strlen(argv[optind])) + 16);
-  strcpy(final_filename, "datasets/");
-  strcat(final_filename, argv[optind]);
-  strcat(final_filename, "/");
-  strcat(final_filename, argv[optind]);
-  strcat(final_filename, ".dat");
-  datafile = fopen(final_filename, "r");
-  check(datafile != NULL, "could not open file %s for reading.", final_filename);
-  free(final_filename);
-  */
-
   datafile = fopen(argv[optind], "r");
   check(datafile != NULL, "could not open file %s for reading.", argv[optind]);
 
@@ -148,6 +145,8 @@ int main(int argc, char *argv[]) {
       k = (size_t) (5 * log10(data.nex));
   }
 
+  struct timespec start = timer_start();
+
   centros = malloc(k * data.nat * sizeof(double));
   check_mem(centros);
   bcls = malloc(data.nex * sizeof(size_t));
@@ -157,21 +156,11 @@ int main(int argc, char *argv[]) {
   gerados = malloc(k * sizeof(size_t));
   check_mem(gerados);
 
-  size_t i;
   switch(alg) {
     case 1:
       printf_v1("*LLOYD*\n");
-      inicializa_naive(data.ex.vec, centros, data.nex, data.nat, k, gerados);
+      naive_init(data.ex.vec, centros, data.nex, data.nat, k, gerados);
       lloyd(data.ex.vec, centros, data.nex, data.nat, k, bcls, nexcl, &rss);
-
-      //TODO make a function to write out results
-      for(i = 0; i < (unsigned) k; i++)
-        printf_v1("cluster [%zd]: %zd exemplos\n", i, nexcl[i]);
-
-      for(i = 0; i < data.nex; i++)
-        printf("%zd",bcls[i]);
-      printf("\n");
-
       break;
 
     case 2:
@@ -190,25 +179,16 @@ int main(int argc, char *argv[]) {
         printf_v1("LB Mult: ");
         printf_v1("%.2f\n", lb_mult);
       }
-      inicializa_naive(data.ex.vec, centros, data.nex, data.nat, (size_t) k,
-                       gerados);
+      naive_init(data.ex.vec, centros, data.nex, data.nat, (size_t) k, gerados);
       yinyang(data.ex.vec, centros, cant, ub, lb, var, data.nex, data.nat,
-              (size_t) k,
-              bcls, nexcl, &rss, lb_mult);
-
-      //TODO make a function to write out results
-      for(i = 0; i < (unsigned) k; i++)
-        printf_v1("cluster [%zd]: %zd exemplos\n", i, nexcl[i]);
-
-      for(i = 0; i < data.nex; i++)
-        printf("%zd",bcls[i]);
-      printf("\n");
+              (size_t) k, bcls, nexcl, &rss, lb_mult);
 
       free(cant);
       free(ub);
       free(lb);
       free(var);
       free(gerados);
+
       break;
 
     //TODO algoritmo kmeanspp
@@ -228,6 +208,16 @@ int main(int argc, char *argv[]) {
     default:
       abort();
   }
+
+  printf_v1("clustering time (msec): ");
+  printf("%.6lf\n", timer_end(start));
+
+  for(size_t i = 0; i < (unsigned) k; i++)
+    printf_v1("cluster [%zd]: %zd exemplos\n", i, nexcl[i]);
+
+  for(size_t i = 0; i < data.nex; i++)
+    printf("%zd",bcls[i]);
+  printf("\n");
 
   //cleanup
   DATASET_FREE(data);

@@ -3,8 +3,8 @@
 
 
 //TODO optimize values for cache sizes
-#define VECTOR_INITIAL_CAPACITY 100
-#define RESIZE_FACTOR 1.5
+#define VECTOR_INITIAL_CAPACITY 256
+#define RESIZE_FACTOR 2
 
 //convenience macros
 #define VECTOR_INIT(vec) vector_init(&vec)

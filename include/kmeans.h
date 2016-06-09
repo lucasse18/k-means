@@ -6,7 +6,7 @@ extern "C" {
 #endif //__cplusplus
 
 #include <stddef.h>
-  
+
 /* ex      = nex * nat * double
  * cen     = k   * nat * double
  * nex     = size_t
@@ -31,8 +31,8 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
              double *lb, double *var, size_t nex, size_t nat, size_t k,
              size_t *bcls, size_t *nexcl, double *rss, double lb_mult);
 
-void inicializa_naive(double *ex, double *c, size_t nex,
-                      size_t nat, size_t k, int *gen);
+void naive_init(double *ex, double *c, size_t nex,
+                size_t nat, size_t k, int *gen);
 
 void inicializa_PP(double *ex, double *c, size_t nex,
                    size_t nat, size_t k, int *gen, double *dist);

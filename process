@@ -41,16 +41,14 @@ args = parser.parse_args()
 
 random.seed()
 
-data_folder = "datasets/" + args.data + "/"
+data_folder = "../datasets/" + args.data + "/"
 data = data_folder + args.data + ".dat"
-yy_args = "./kmeans " + data + " -q -a yy -k " + args.clusters + " -s "
+yy_args = "../kmeans " + data + " -q -a yy -k " + args.clusters + " -s "
 
 outfile = data_folder + args.outfile + ".dat"
-outfile2 = data_folder + args.outfile + "2.dat"
 remove_file(outfile)
-remove_file(outfile2)
 
-for mult in [m for m in float_range(1.1, 2.1, 0.01)]:
+for mult in [m for m in float_range(1.1, 2.1, 0.1)]:
     res = ([], [], [])
     res2 = ([], [], [])
     for i in range(int(args.iterations)):
@@ -58,29 +56,18 @@ for mult in [m for m in float_range(1.1, 2.1, 0.01)]:
 
         yy = sp.getoutput(yy_args + str(seed))
         yy_m = sp.getoutput(yy_args + str(seed) + " -m " + str(mult))
-        yy_m_c = sp.getoutput(yy_args + str(seed) + " -m " + str(mult) + " -c")
 
         yy = str.splitlines(yy)
         yy_m = str.splitlines(yy_m)
-        yy_m_c = str.splitlines(yy_m_c)
 
-        # computa o ganho: com_mult - sem_mult
+        # computa o ganho
         res[0].append(float(yy_m[0]) - float(yy[0]))
-        # conta o numero de erros
-        res[1].append(sum((1 for a, b in zip(yy[1], yy_m[1]) if a != b)))
+        # rand index comparando os agrupamentos
+        res[1].append(sp.getoutput("Rscript randindex.r --args " + yy[1] + " " + yy_m[1]))
         # multiplicador utilizado
         res[2].append(mult)
 
-        res2[0].append(float(yy_m_c[0]) - float(yy[0]))
-        res2[1].append(sum((1 for a, b in zip(yy[1], yy_m_c[1]) if a != b)))
-        res2[2].append(mult)
-
     res = zip(res[0], res[1], res[2])
-    res2 = zip(res2[0], res2[1], res2[2])
     with open(outfile, 'a') as f:
         for col in res:
-            f.write("{0},{1},{2}\n".format(*col))
-
-    with open(outfile2, 'a') as f:
-        for col in res2:
             f.write("{0},{1},{2}\n".format(*col))

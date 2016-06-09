@@ -1,10 +1,10 @@
 CC   = gcc
-STD  = -std=gnu99
-DBG  = -ggdb3 -Wall
-LIBM = -lm
-INC  = include
+INCDIR  = include
 
-CFLAGS = ${STD} ${DBG} ${LIBM} -I ${INC}
+CFLAGS = -std=gnu99 -I ${INCDIR} -lm
+
+RELFLAGS = ${CFLAGS} -DNDEBUG -O2
+DBGFLAGS = ${CFLAGS} -Wall -ggdb3
 
 SOURCE = src/main.c\
 	src/vector.c\
@@ -12,7 +12,7 @@ SOURCE = src/main.c\
 	src/kmeans.c
 
 kmeans:${SOURCE}
-	${CC} ${CFLAGS} -DNDEBUG -o $@ $^
+	${CC} ${RELFLAGS} -o $@ $^
 
 dbg:${SOURCE}
-	${CC} ${CFLAGS} -o kmeans-$@ $^
+	${CC} ${DBGFLAGS} -o kmeans-$@ $^
