@@ -81,7 +81,7 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
              double *lb, double *var, size_t nex, size_t nat, size_t k,
              size_t *bcls, size_t *nexcl, double *rss, double lb_mult) {
 
-  size_t i, j, old_best, itr_count=0, calculos_evitados=0, swaps=1;
+  size_t i, j, old_best, itr_count=1, calculos_evitados=0, swaps=1;
   double d_atual, d_menor, max_var;
 
   //inicializa vetor que identifica a media mais proxima para cada ponto
@@ -138,38 +138,38 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   }
   //FIM PRIMEIRA ATRIBUICAO - LLOYD
 
+  //salva centro como centro anterior antes de recomputar
+  for(i = 0; i < k * nat; i++) {
+    cant[i] = c[i];
+    c[i] = 0.0;
+  }
+
+  //recomputa cada cluster
+  for(i = 0; i < nex; i++)
+    for(j = 0; j < nat; j++)
+      c[j + nat * bcls[i]] += ex[j + nat * i];
+
+  for(i = 0; i < k; i++)
+    for(j = 0; j < nat; j++)
+      if(nexcl[i] > 0)
+        c[j + nat * i] /= nexcl[i];
+
+  //calcula variacao de cada cluster
+  for(i = 0; i < k; i++)
+    var[i] = sqr_dist(c, cant, nat * i, nat * i, nat);
+
+  //atualiza limites globais de todos os exemplos
+  max_var = max(var, k);
+  for(i = 0; i < nex; i++) {
+    ub[i] += var[bcls[i]];
+    lb[i] -= max_var;
+  }
+
   //algoritmo yinyang
   while(swaps) {
     swaps = 0;
     //*rss = 0.0;
     itr_count++;
-
-    //salva centro como centro anterior antes de recomputar
-    for(i = 0; i < k * nat; i++) {
-      cant[i] = c[i];
-      c[i] = 0.0;
-    }
-
-    //recomputa cada cluster
-    for(i = 0; i < nex; i++)
-      for(j = 0; j < nat; j++)
-        c[j + nat * bcls[i]] += ex[j + nat * i];
-
-    for(i = 0; i < k; i++)
-      for(j = 0; j < nat; j++)
-        if(nexcl[i] > 0)
-          c[j + nat * i] /= nexcl[i];
-
-    //calcula variacao de cada cluster
-    for(i = 0; i < k; i++)
-      var[i] = sqr_dist(c, cant, nat * i, nat * i, nat);
-
-    //atualiza limites globais de todos os exemplos
-    max_var = max(var, k);
-    for(i = 0; i < nex; i++) {
-      ub[i] += var[bcls[i]];
-      lb[i] -= max_var;
-    }
 
     //atribui cada exemplo a um cluster
     for(i = 0; i < nex; i++) {
@@ -208,12 +208,39 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       }
     }//fim atribuicao
 
-    //se mult for maior que 1.0 e houveram poucas trocas finalizar com mult 1.0
-    if((fabs(lb_mult - 1.0) > FLT_EPSILON) && (swaps < (size_t)(0.05 * nex))) {
-      debug("correcao iniciada, iteracoes: %zd", itr_count);
-      yinyang(ex,c,cant,ub,lb,var,nex,nat,k,bcls,nexcl,rss,1.0);
-      return;
+    //salva centro como centro anterior antes de recomputar
+    for(i = 0; i < k * nat; i++) {
+      cant[i] = c[i];
+      c[i] = 0.0;
     }
+
+    //recomputa cada cluster
+    for(i = 0; i < nex; i++)
+      for(j = 0; j < nat; j++)
+        c[j + nat * bcls[i]] += ex[j + nat * i];
+
+    for(i = 0; i < k; i++)
+      for(j = 0; j < nat; j++)
+        if(nexcl[i] > 0)
+          c[j + nat * i] /= nexcl[i];
+
+    //calcula variacao de cada cluster
+    for(i = 0; i < k; i++)
+      var[i] = sqr_dist(c, cant, nat * i, nat * i, nat);
+
+    //atualiza limites globais de todos os exemplos
+    max_var = max(var, k);
+    for(i = 0; i < nex; i++) {
+      ub[i] += var[bcls[i]];
+      lb[i] -= max_var;
+    }
+
+    //se mult for maior que 1.0 e houveram poucas trocas finalizar com mult 1.0
+    /* if((fabs(lb_mult - 1.0) > FLT_EPSILON) && (swaps < (size_t)(0.01 * nex))) { */
+    /*   debug("correcao iniciada, iteracoes: %zd", itr_count); */
+    /*   yinyang(ex,c,cant,ub,lb,var,nex,nat,k,bcls,nexcl,rss,1.0); */
+    /*   return; */
+    /* } */
   }//fim algoritmo
 
   debug("iteracoes: %zd", itr_count);

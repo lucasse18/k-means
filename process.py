@@ -5,6 +5,7 @@ import random
 import errno
 import os
 
+from sklearn.metrics.cluster import adjusted_rand_score
 
 def remove_file(filename):
     try:
@@ -33,6 +34,8 @@ parser.add_argument('-d', action='store', dest='data',
                     required=True, help='dataset name')
 parser.add_argument('-k', action='store', dest='clusters',
                     required=True, help='number of clusters')
+parser.add_argument('-m', action='store', dest='mult',
+                    required=True, help='sample size')
 parser.add_argument('-n', action='store', dest='iterations',
                     default='10',  help='sample size')
 parser.add_argument('-o', action='store', dest='outfile',
@@ -41,31 +44,31 @@ args = parser.parse_args()
 
 random.seed()
 
-data_folder = "../datasets/" + args.data + "/"
+data_folder = "datasets/" + args.data + "/"
 data = data_folder + args.data + ".dat"
-yy_args = "../kmeans " + data + " -q -a yy -k " + args.clusters + " -s "
+cmd = "sudo nice -n -3 ./kmeans " + data + " -q -a yy -k " + args.clusters + " -s "
 
 outfile = data_folder + args.outfile + ".dat"
 remove_file(outfile)
 
-for mult in [m for m in float_range(1.1, 2.1, 0.1)]:
-    res = ([], [], [])
+# for mult in [m for m in float_range(1.1, 2.1, 0.1)]:
+for i in range(int(args.iterations)):
     res2 = ([], [], [])
-    for i in range(int(args.iterations)):
-        seed = random.getrandbits(64)
+    res = ([], [], [])
+    seed = random.getrandbits(64)
 
-        yy = sp.getoutput(yy_args + str(seed))
-        yy_m = sp.getoutput(yy_args + str(seed) + " -m " + str(mult))
+    yy = sp.getoutput("taskset 4 " + cmd + str(seed))
+    yy_m = sp.getoutput("taskset 8 " + cmd + str(seed) + " -m " + str(args.mult))
 
-        yy = str.splitlines(yy)
-        yy_m = str.splitlines(yy_m)
+    yy = str.splitlines(yy)
+    yy_m = str.splitlines(yy_m)
 
-        # computa o ganho
-        res[0].append(float(yy_m[0]) - float(yy[0]))
-        # rand index comparando os agrupamentos
-        res[1].append(sp.getoutput("Rscript randindex.r --args " + yy[1] + " " + yy_m[1]))
-        # multiplicador utilizado
-        res[2].append(mult)
+    # computa a diferenca no tempo de execucao
+    res[0].append(float(yy[0]) - float(yy_m[0]))
+    # compara os agrupamentos
+    res[1].append(adjusted_rand_score(list(yy[1]),list(yy_m[1])))
+    # multiplicador utilizado
+    res[2].append(args.mult)
 
     res = zip(res[0], res[1], res[2])
     with open(outfile, 'a') as f:
