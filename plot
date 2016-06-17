@@ -36,11 +36,19 @@ set ylabel "Gain(%)"
 
 plot "$folder/$dataset/$filename" u 3:1 t "iteration", gain_mean t "gain mean"
 
-# terceiro grafico, ganho x similaridade x mult
-set output "$dataset-gain_quality_mult.png"
-set xlabel "Mult"
-set ylabel "RIndex"
-set zlabel "Gain (%)"
+# terceiro grafico, ganho x similaridade
+set output "$dataset-gain_quality.png"
+set xlabel "RIndex"
+set ylabel "Gain(%)"
 
-splot "$folder/$dataset/$filename" u 3:2:1 t "iteration"
+# FIXME RIndex mean deveria estar no eixo x
+plot "$folder/$dataset/$filename" u 2:1 t "iteration", gain_mean t "gain mean", quality_mean t "RIndex mean"
+
+# # quarto grafico, ganho x similaridade x mult
+# set output "$dataset-gain_quality_mult.png"
+# set xlabel "Mult"
+# set ylabel "RIndex"
+# set zlabel "Gain (%)"
+
+# splot "$folder/$dataset/$filename" u 3:2:1 t "iteration"
 EOF
