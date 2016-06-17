@@ -18,7 +18,7 @@ set datafile separator ","
 set title "$dataset-$filename"
 set term "png"
 
-stats "$folder/$dataset/$filename" using 1 name "time"
+stats "$folder/$dataset/$filename" using 1 name "gain"
 stats "$folder/$dataset/$filename" using 2 name "quality"
 stats "$folder/$dataset/$filename" using 3 name "mult"
 
@@ -27,20 +27,20 @@ set output "$dataset-quality_mult.png"
 set xlabel "Mult"
 set ylabel "RIndex"
 
-plot "$folder/$dataset/$filename" using 3:2 t "dados", quality_mean t "média Rindex"
+plot "$folder/$dataset/$filename" u 3:2 t "iteration", quality_mean t "RIndex mean"
 
-# segundo grafico, tempo x mult
-set output "$dataset-time_mult.png"
+# segundo grafico, ganho x mult
+set output "$dataset-gain_mult.png"
 set xlabel "Mult"
-set ylabel "Ganho (%)"
+set ylabel "Gain(%)"
 
-plot "$folder/$dataset/$filename" using 3:1 t "dados", time_mean t "média tempo"
+plot "$folder/$dataset/$filename" u 3:1 t "iteration", gain_mean t "gain mean"
 
-# terceiro grafico, similaridade x ganho x mult
-set output "$dataset-quality_time_mult.png"
+# terceiro grafico, ganho x similaridade x mult
+set output "$dataset-gain_quality_mult.png"
 set xlabel "Mult"
 set ylabel "RIndex"
-set zlabel "Ganho (%)"
+set zlabel "Gain (%)"
 
-splot "$folder/$dataset/$filename" using 3:1:2 t "dados", time_mean t "média tempo", quality_mean t "média Rindex"
+splot "$folder/$dataset/$filename" u 3:2:1 t "iteration"
 EOF

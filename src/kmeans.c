@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <float.h>
 
 #include "kmeans.h"
 #include "dbg.h"
@@ -26,7 +25,7 @@ extern int optv;
 void lloyd(double *ex, double *c, size_t nex, size_t nat, size_t k,
            size_t *bcls, size_t *nexcl, double *rss) {
   bool updated;
-  size_t i, j, new_best = 0;
+  size_t i, j, new_best = 0, calculations=0;
   double dist_atual, dist_menor;
 
   size_t itr_count = 0;
@@ -43,6 +42,7 @@ void lloyd(double *ex, double *c, size_t nex, size_t nat, size_t k,
     for(i = 0; i < nex; i++) {
       dist_menor = INFINITY;
       for(j = 0; j < k; j++) {
+        calculations++;
         dist_atual = sqr_dist(ex, c, nat * i, nat * j, nat);
         if(dist_atual < dist_menor) {
           dist_menor = dist_atual;
@@ -74,14 +74,16 @@ void lloyd(double *ex, double *c, size_t nex, size_t nat, size_t k,
         if(nexcl[i] > 0)
           c[j + nat * i] /= nexcl[i];
   }
+  printf("%zd\n", calculations);
   printf_v1("iteracoes: %zd\n", itr_count);
 }
 
-void yinyang(double *ex, double *c, double *cant, double *ub,
-             double *lb, double *var, size_t nex, size_t nat, size_t k,
-             size_t *bcls, size_t *nexcl, double *rss, double lb_mult) {
+void yinyang(double *ex, double *c, double *cant, double *ub, double *lb,
+             double *var, size_t nex, size_t nat, size_t k, size_t *bcls,
+             size_t *nexcl, double lb_mult) {
 
-  size_t i, j, old_best, itr_count=1, calculos_evitados=0, swaps=1;
+  bool updated = true;
+  size_t i, j, old_best, itr_count=1, calculations=0;
   double d_atual, d_menor, max_var;
 
   //inicializa vetor que identifica a media mais proxima para cada ponto
@@ -92,23 +94,20 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
   for(i = 0; i < k; i++)
     nexcl[i] = 0;
 
-  //inicializa a funcao objetivo
-  //*rss = 0;
-
   //INICIO PRIMEIRA ATRIBUICAO - LLOYD
   for(i = 0; i < nex; i++) {
     d_menor = INFINITY;
 
     //busca pelas medias mais proxima e segunda mais proxima
     for(j = 0; j < k; j++) {
+      calculations++;
       d_atual = sqr_dist(ex, c, nat * i, nat * j, nat);
-      check_if_debug(d_atual >= 0, "distancia negativa");
+      check_if_debug(d_atual >= 0, "distance < 0");
 
       //ao encontrar as distancias menor e segunda menor, inicializa ub e lb
       if(d_atual < d_menor) {
         //a menor se torna a segunda menor
         //FIXME se k=1, lb[i] == INFINITY
-        //ou lb[i] == INFINITY nao e problema, pois evitara todos os calculos?
         lb[i] = d_menor;
 
         //atualiza d_menor e bcls
@@ -121,92 +120,23 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       }
     }
 
-    check_if_debug(d_menor != INFINITY, "d_menor == INFINITY");
-    check_if_debug(lb[i] != INFINITY, "lb[%zd] == INFINITY", i);
-    check_if_debug(bcls[i] < k, "bcls[%zd] fora do intervalo [0,k)", i);
+    check_if_debug(bcls[i] < k, "bcls[%zd] out of range [0,k)", i);
 
     //d_menor definitiva do exemplo i calculada, inicializar ub
     ub[i] = d_menor;
 
+    //extend initial lower bound
     lb[i] *= lb_mult;
 
     //numero de exemplos em bcls[i] incrementado
     nexcl[bcls[i]]++;
-
-    //funcao objetivo atualizada
-    //*rss += d_menor;
   }
   //FIM PRIMEIRA ATRIBUICAO - LLOYD
 
-  //salva centro como centro anterior antes de recomputar
-  for(i = 0; i < k * nat; i++) {
-    cant[i] = c[i];
-    c[i] = 0.0;
-  }
-
-  //recomputa cada cluster
-  for(i = 0; i < nex; i++)
-    for(j = 0; j < nat; j++)
-      c[j + nat * bcls[i]] += ex[j + nat * i];
-
-  for(i = 0; i < k; i++)
-    for(j = 0; j < nat; j++)
-      if(nexcl[i] > 0)
-        c[j + nat * i] /= nexcl[i];
-
-  //calcula variacao de cada cluster
-  for(i = 0; i < k; i++)
-    var[i] = sqr_dist(c, cant, nat * i, nat * i, nat);
-
-  //atualiza limites globais de todos os exemplos
-  max_var = max(var, k);
-  for(i = 0; i < nex; i++) {
-    ub[i] += var[bcls[i]];
-    lb[i] -= max_var;
-  }
-
   //algoritmo yinyang
-  while(swaps) {
-    swaps = 0;
-    //*rss = 0.0;
+  while(updated) {
+    updated = false;
     itr_count++;
-
-    //atribui cada exemplo a um cluster
-    for(i = 0; i < nex; i++) {
-
-      //lemma 1 yin yang
-      if(lb[i] >= ub[i])
-        calculos_evitados++;
-
-      else {
-        d_menor = INFINITY;
-        old_best = bcls[i];
-
-        //calcula a distancia do exemplo i aos j centros
-        for(j = 0; j < k; j++) {
-          //calcula a distancia do exemplo i ao centro j
-          d_atual = sqr_dist(ex, c, nat * i, nat * j, nat);
-          check_if_debug(d_atual >= 0, "distancia negativa");
-
-          if(d_atual < d_menor) {
-            //atualiza d_menor e bcls
-            d_menor = d_atual;
-            bcls[i] = j;
-          }
-        }
-
-        check_if_debug(d_menor != INFINITY, "d_menor == infinito");
-        check_if_debug(bcls[i] < k, "bcls[%zd] fora do intervalo [0,k)", i);
-
-        //verifica se de fato houve troca
-        if(old_best != bcls[i]) {
-          nexcl[old_best]--;
-          nexcl[bcls[i]]++;
-          swaps++;
-        }
-        //*rss += d_menor;
-      }
-    }//fim atribuicao
 
     //salva centro como centro anterior antes de recomputar
     for(i = 0; i < k * nat; i++) {
@@ -225,8 +155,10 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
           c[j + nat * i] /= nexcl[i];
 
     //calcula variacao de cada cluster
-    for(i = 0; i < k; i++)
+    for(i = 0; i < k; i++) {
+      calculations++;
       var[i] = sqr_dist(c, cant, nat * i, nat * i, nat);
+    }
 
     //atualiza limites globais de todos os exemplos
     max_var = max(var, k);
@@ -235,23 +167,48 @@ void yinyang(double *ex, double *c, double *cant, double *ub,
       lb[i] -= max_var;
     }
 
-    //se mult for maior que 1.0 e houveram poucas trocas finalizar com mult 1.0
-    /* if((fabs(lb_mult - 1.0) > FLT_EPSILON) && (swaps < (size_t)(0.01 * nex))) { */
-    /*   debug("correcao iniciada, iteracoes: %zd", itr_count); */
-    /*   yinyang(ex,c,cant,ub,lb,var,nex,nat,k,bcls,nexcl,rss,1.0); */
-    /*   return; */
-    /* } */
+    //atribui cada exemplo a um cluster
+    for(i = 0; i < nex; i++) {
+
+      //lemma 1 yin yang
+      if(lb[i] < ub[i]) {
+        d_menor = INFINITY;
+        old_best = bcls[i];
+
+        //calcula a distancia do exemplo i aos j centros
+        for(j = 0; j < k; j++) {
+          calculations++;
+          //calcula a distancia do exemplo i ao centro j
+          d_atual = sqr_dist(ex, c, nat * i, nat * j, nat);
+          check_if_debug(d_atual >= 0, "distance < 0");
+
+          if(d_atual < d_menor) {
+            //atualiza d_menor e bcls
+            d_menor = d_atual;
+            bcls[i] = j;
+          }
+        }
+
+        check_if_debug(bcls[i] < k, "bcls[%zd] out of range [0,k)", i);
+
+        //verifica se de fato houve troca
+        if(old_best != bcls[i]) {
+          nexcl[old_best]--;
+          nexcl[bcls[i]]++;
+          updated=true;
+        }
+      }
+    }//fim atribuicao
   }//fim algoritmo
 
-  debug("iteracoes: %zd", itr_count);
-  size_t total_calculos = itr_count * nex;
-  size_t calculos_realizados = total_calculos - calculos_evitados;
-  printf_v1("total de calculos: %zd\n", total_calculos);
-  printf_v1("realizados: %zd\n", calculos_realizados);
-  printf_v1("evitados: ");
-  printf_v1("%zd\n", calculos_evitados);
-  printf_v1("taxa evitados: ");
-  printf_v1("%.4f\n", (double)calculos_evitados/(double)total_calculos);
+  //finish with regular yinyang in order to get the right clustering
+  if(lb_mult > 1) {
+    yinyang(ex,c,cant,ub,lb,var,nex,nat,k,bcls,nexcl,1.0);
+    return;
+  }
+
+  printf("%zd\n", calculations);
+  debug("iterations: %zd", itr_count);
 
   return;
 
@@ -278,7 +235,6 @@ void naive_init(double *ex, double *c, size_t nex, size_t nat, size_t k, int *ge
   }
 }
 
-//TODO kmeans++
 void inicializa_PP(double *ex, double *c, size_t nex,
                    size_t nat, size_t k, int *gen, double *dist) {
   size_t i, j, qtd_ja_escolhidos = 0;
@@ -324,8 +280,6 @@ void inicializa_PP(double *ex, double *c, size_t nex,
       gen[qtd_ja_escolhidos++] = (int)i;
   }
 }
-
-//helper functions
 
 int contained(int key, int *base, size_t size) {
   for(size_t i = 0; i < size; i++) {

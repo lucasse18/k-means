@@ -29,7 +29,7 @@ void lloyd(double *ex, double *c, size_t nex, size_t nat,
 
 void yinyang(double *ex, double *c, double *cant, double *ub,
              double *lb, double *var, size_t nex, size_t nat, size_t k,
-             size_t *bcls, size_t *nexcl, double *rss, double lb_mult);
+             size_t *bcls, size_t *nexcl, double lb_mult);
 
 void naive_init(double *ex, double *c, size_t nex,
                 size_t nat, size_t k, int *gen);

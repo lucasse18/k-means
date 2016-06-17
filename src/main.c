@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   static long user_seed = -1;
   static double lb_mult = 1.0;
 
-  static struct option long_opts[] = {
+  static struct option opts[] = {
     {"help",       no_argument,       0, 'h'},
     {"outfile",    required_argument, 0, 'o'},//unused, default stdout
     {"algorithm",  required_argument, 0, 'a'},//default lloyd (1)
@@ -67,9 +67,9 @@ int main(int argc, char *argv[]) {
   };
 
   int c;
-  int opt_index = 0;
+  int index = 0;
 
-  while((c = getopt_long (argc, argv, "ho:a:k:s:m:qv", long_opts, &opt_index)) != -1) {
+  while((c = getopt_long(argc, argv, "ho:a:k:s:m:qv", opts, &index)) != -1) {
     switch(c) {
     case 0:
       break;
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
 
 
   //FIXME eh necessario tratamento especial para k > data.nex?
-  //se usuario nao definiu k, utilizar o criterio de oliveira
+  //se usuario nao definiu k, utilizar padrao
   if(k == 0) {
     log_warn("number of clusters undefined, using default value");
     if(data.nex <= 100)
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
       }
       naive_init(data.ex.vec, centros, data.nex, data.nat, (size_t) k, gerados);
       yinyang(data.ex.vec, centros, cant, ub, lb, var, data.nex, data.nat,
-              (size_t) k, bcls, nexcl, &rss, lb_mult);
+              (size_t) k, bcls, nexcl, lb_mult);
 
       free(cant);
       free(ub);
@@ -191,18 +191,7 @@ int main(int argc, char *argv[]) {
 
       break;
 
-    //TODO algoritmo kmeanspp
     case 3:
-      dist = malloc(data.nex * sizeof(double));
-      check_mem(dist);
-
-      inicializa_PP(data.ex.vec, centros, data.nex, data.nat, k, gerados, dist);
-      lloyd(data.ex.vec, centros, data.nex, data.nat, k, bcls, nexcl, &rss);
-
-      free(dist);
-      break;
-
-    case 4:
       //TODO
 
     default:
@@ -210,16 +199,16 @@ int main(int argc, char *argv[]) {
   }
 
   printf_v1("clustering time (msec): ");
-  printf("%.6lf\n", timer_end(start));
+  printf_v1("%.6lf\n", timer_end(start));
 
   for(size_t i = 0; i < (unsigned) k; i++)
-    printf_v1("cluster [%zd]: %zd exemplos\n", i, nexcl[i]);
+    printf_v1("cluster [%zd]: %zd samples\n", i, nexcl[i]);
 
   for(size_t i = 0; i < data.nex; i++)
     printf("%zd",bcls[i]);
   printf("\n");
 
-  //cleanup
+
   DATASET_FREE(data);
 
   if(outfile != stdout) fclose(outfile);
@@ -245,12 +234,6 @@ int main(int argc, char *argv[]) {
   exit(1);
 }
 
-unsigned long rdtsc(){
-    unsigned int lo=0,hi=0;
-    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
-    return ((unsigned long)hi << 32) | lo;
-}
-
 void print_usage() {
   printf("Usage: kmeans [options] file...\n");
   printf("Options:\n");
@@ -269,8 +252,11 @@ int get_alg_code(const char *optarg) {
     return 2;
   if(strcmp("pp", optarg) == 0)
     return 3;
-  if(strcmp("yypp", optarg) == 0)
-    return 4;
-
   return -1;
+}
+
+unsigned long rdtsc(){
+    unsigned int lo=0,hi=0;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    return ((unsigned long)hi << 32) | lo;
 }
